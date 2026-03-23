@@ -487,9 +487,18 @@ socket.on('disconnect', () => {
 });
 
 // INICIO DEL SERVIDOR
-server.listen(3000, () => {
+//server.listen(3000, () => {
+//    console.log('**************************************************');
+//    console.log('* SERVIDOR BWS LISTO EN PUERTO 3000              *');
+//    console.log('* Esperando jugadores...                         *');
+//    console.log('**************************************************');
+//});
+
+// INICIO DEL SERVIDOR
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
     console.log('**************************************************');
-    console.log('* SERVIDOR BWS LISTO EN PUERTO 3000              *');
-    console.log('* Esperando jugadores...                         *');
+    console.log(' SERVIDOR BWS LISTO EN PUERTO ' + port + '              ');
+    console.log(' Esperando jugadores...                         ');
     console.log('**************************************************');
 });
