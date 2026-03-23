@@ -202,10 +202,12 @@ socket.on('connect', () => {
     actualizarPreloader("Conectado al servidor", 20);
 });
 // --- LOGICA DE ROLES INICIALES ---
-
 socket.on('rolInicial', (data) => {
     console.log("Servidor asignó rol: " + data.rol);
     window._rolRecibido = data.rol;
+
+    // Ocultar preloader y mostrar el tablero
+    ocultarPreloader();
 
     const modalBackend = document.getElementById('ModalBackend');
     const modalEspera = document.getElementById('ModalEspera');
@@ -398,11 +400,12 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
         ocultarPreloader();
 
         // Mostrar el modal correspondiente según el rol guardado
-        if (window._rolRecibido === 'host') {
-            document.getElementById('ModalBackend').style.display = 'flex';
-        } else if (window._rolRecibido === 'espera') {
-            document.getElementById('ModalEspera').style.display = 'flex';
-        }
+//        if (window._rolRecibido === 'host') {
+//            document.getElementById('ModalBackend').style.display = 'flex';
+//        } else if (window._rolRecibido === 'espera') {
+//            document.getElementById('ModalEspera').style.display = 'flex';
+//        }
+
     });
 });
 
@@ -478,11 +481,11 @@ socket.on('reconectarJugador', (data) => {
 
         ocultarPreloader();
 
-        if (window._rolRecibido === 'host') {
-            document.getElementById('ModalBackend').style.display = 'flex';
-        } else if (window._rolRecibido === 'espera') {
-            document.getElementById('ModalEspera').style.display = 'flex';
-        }
+ //       if (window._rolRecibido === 'host') {
+ //           document.getElementById('ModalBackend').style.display = 'flex';
+ //       } else if (window._rolRecibido === 'espera') {
+ //           document.getElementById('ModalEspera').style.display = 'flex';
+ //       }
         console.log("Reconexión completada. Turno actual: " + turnoActual);
 
     });
