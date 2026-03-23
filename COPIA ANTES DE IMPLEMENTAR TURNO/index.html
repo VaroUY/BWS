@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BWS - By Varo</title>
+    <meta charset="utf-8">
+<style type="text/css">
+    /* --- 1. RESET Y ESTRUCTURA GLOBAL --- */
+    * { 
+        margin: 0; 
+        padding: 0; 
+        text-decoration: none; 
+        color: white; /* Color por defecto para el tablero */
+        font-family: 'Helvetica', 'Arial', sans-serif; 
+        box-sizing: border-box; 
+    }
+
+    body {
+        background-color: black;
+        margin: 0; padding: 0;
+        width: 100vw; height: 100vh;
+        overflow: hidden; 
+    }
+
+    #ContenedorGeneral {
+        position: absolute;
+        top: 50%; 
+        left: 50%;
+        width: 1440px; 
+        height: 820px; 
+        transform-origin: center center;
+        background-color: black;
+        /* El transform se aplica por JS en la función redimensionarJuego */
+    }
+
+    /* --- 2. POSICIONAMIENTO DE MONITORES --- */
+    #LogoTablero { position: absolute; top: 0px; left: 0px; width: 394px; }
+    #MonitorCentral { position: absolute; top: 0px; left: 402px; }
+    #MonitorInteractivo { 
+        position: absolute; 
+        top: 0px; left: 1154px; 
+        width: 279px; height: 810px; 
+        background-color: rgb(24,24,24); 
+    }
+
+    /* --- 3. PANEL DE COTIZACIONES (DISEÑO TÉCNICO) --- */
+    #empresas_valor {
+        background-color: rgb(24,24,24);
+        width: 394px;
+        padding-bottom: 5px;
+    }
+
+    .header-cotizaciones {
+        text-align: center;
+        padding: 5px 0;
+    }
+
+    #ContenedorEtiquetas {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+        padding: 0 5px;
+        margin-top: -8px; 
+    }
+
+    .item-cotizacion {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 85px;
+    }
+
+    .item-cotizacion .value {
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    /* Brillos de Valores */
+    #ValorHeineken  { color: #28a745; text-shadow: 0 0 10px rgba(40, 167, 69, 0.6); }
+    #ValorGatorade  { color: #adb5bd; text-shadow: 0 0 10px rgba(173, 181, 189, 0.6); }
+    #ValorNike      { color: #dc3545; text-shadow: 0 0 10px rgba(220, 53, 69, 0.6); }
+    #ValorMcDonalds { color: #ffc107; text-shadow: 0 0 10px rgba(255, 193, 7, 0.6); }
+
+    /* --- 4. CANVAS Y GRÁFICA --- */
+    #canvasBarras {
+        background-color: rgb(24,24,24);
+        margin-left: 2px;
+        display: block;
+    }
+
+    /* --- 5. COMPONENTES DE INTERFAZ --- */
+    #ComboBox { background-color: black; color: yellow; margin-left: 20px; padding: 5px; border: 1px solid #444; }
+    #CantidadInput { padding: 5px; width: 125px; color: yellow; background-color: black; border: 0.5px solid grey; }
+    #Finalizar, #Ejecutar { padding: 3px; background-color: rgb(137,21,43); color: white; border: 1px solid darkred; margin-left: 20px; width: 100px; cursor: pointer; }
+
+    #TituloGraficas, #MonitorSubTitulo { background-color: rgb(70,45,125); margin-top: 5px; text-align: center; padding: 4px; font-size: 18px; }
+    #MInteractivoTituloInteractivo, #MInteractivoTituloMaso, #MInteractivoTituloCartas_Texto { background-color: darkgreen; font-size: 16px; text-align: center; padding: 5px; margin-top: 6px; }
+
+    /* --- 6. TABLAS --- */
+    table { font-size: 15px; border-collapse: collapse; width: 735px; }
+    td { padding: 8px; color: white; width: 200px; }
+    table tr:nth-child(even) { background-color: rgb(40,41,35); }
+
+    /* --- 7. MODALES (CORRECCIÓN FINAL) --- */
+    .modal-admin {
+        display: none; 
+        position: absolute; /* Absolute dentro de ContenedorGeneral */
+        z-index: 20000; 
+        top: 0; left: 0; 
+        width: 1440px; /* Ancho total del tablero */
+        height: 820px; /* Alto total del tablero */
+        background: rgba(0, 0, 0, 0.9); /* Oscurece todo el tablero */
+        align-items: center; 
+        justify-content: center;
+    }
+
+    /* IMPORTANTE: Forzar color oscuro para textos dentro de modales blancos */
+    .modal-admin div, 
+    .modal-admin h2, 
+    .modal-admin p, 
+    .modal-admin span, 
+    .modal-admin label {
+        color: #333; /* Gris oscuro para que se vea sobre el fondo blanco del modal */
+    }
+
+    /* Si el modal tiene botones, que mantengan su estilo */
+    .modal-admin button {
+        color: white;
+        cursor: pointer;
+    }
+
+    /* Asegurar que el div interno que tiene el estilo inline de 800x500 se centre */
+    .modal-admin > div {
+        margin: auto !important;
+        position: relative;
+    }
+
+    #BtnAbrirBackend { 
+        position: absolute; bottom: 15px; right: 15px; z-index: 999; 
+        padding: 5px 10px; background: #1a1a1a; color: #444; 
+        border: 1px solid #333; cursor: pointer; font-size: 10px; 
+    }
+</style>
+</head>
+
+<body>
+
+    <div id="ContenedorGeneral">
+        
+        <button id="BtnAbrirBackend" onclick="document.getElementById('ModalBackend').style.display='flex'">CONFIG</button>
+
+        <div id="LogoTablero">
+            <div id="logo">
+                <img src="_imagenes/logo75.png" 
+            </div>  
+
+<div id="empresas_valor">
+    <div class="header-cotizaciones">
+        <img src="_imagenes/empresas_valor75.png"> 
+    </div>
+    
+    <div id="ContenedorEtiquetas">
+        <div class="item-cotizacion">
+            <span id="ValorHeineken" class="value">1000</span>
+        </div>
+        <div class="item-cotizacion">
+            <span id="ValorGatorade" class="value">1000</span>
+        </div>
+        <div class="item-cotizacion">
+            <span id="ValorNike" class="value">1000</span>
+        </div>
+        <div class="item-cotizacion">
+            <span id="ValorMcDonalds" class="value">1000</span>
+        </div>
+    </div>
+</div>
+
+        <canvas id="canvasBarras" style="background-color: rgb(24,24,24); margin-left: 3px; height:558px; width: 390px;"></canvas>
+        </div>
+
+        <div id="MonitorCentral">
+            <div id="MonitorHeader"><img src="_imagenes/MonitorHeader.png" style="margin-left: 2px;"></div>
+            <div id="MonitorEmpresasAcciones" style="margin-left: 4px;">
+                <table>                     
+                    <tr id="Jugador1_Linea"> <td id="Jugador1_Nombre">No Asignado</td> <td id="Jugador1_Total">.</td> <td id="Jugador1_Cash">.</td> <td id="Jugador1_Heineken">.</td> <td id="Jugador1_Gatorade">.</td> <td id="Jugador1_Nike">.</td> <td id="Jugador1_McDonalds">.</td></tr>
+                    <tr id="Jugador2_Linea"> <td id="Jugador2_Nombre">No Asignado</td> <td id="Jugador2_Total">.</td> <td id="Jugador2_Cash">.</td> <td id="Jugador2_Heineken">.</td> <td id="Jugador2_Gatorade">.</td> <td id="Jugador2_Nike">.</td> <td id="Jugador2_McDonalds">.</td></tr>
+                    <tr id="Jugador3_Linea"> <td id="Jugador3_Nombre">No Asignado</td> <td id="Jugador3_Total">.</td> <td id="Jugador3_Cash">.</td> <td id="Jugador3_Heineken">.</td> <td id="Jugador3_Gatorade">.</td> <td id="Jugador3_Nike">.</td> <td id="Jugador3_McDonalds">.</td></tr>
+                    <tr id="Jugador4_Linea"> <td id="Jugador4_Nombre">No Asignado</td> <td id="Jugador4_Total">.</td> <td id="Jugador4_Cash">.</td> <td id="Jugador4_Heineken">.</td> <td id="Jugador4_Gatorade">.</td> <td id="Jugador4_Nike">.</td> <td id="Jugador4_McDonalds">.</td></tr>
+                </table>            
+            </div>
+            <div id="MonitorSubTitulo">Valor Accionario</div>
+            <div id="MonitorEmpresasValores" style="margin-top: 8px;">
+                <table>                     
+                    <tr id="Jugador1_V_Linea"> <td id="Jugador1_V_Nombre">No Asignado</td> <td id="Jugador1_V_Total">.</td> <td id="Jugador1_V_Cash">.</td> <td id="Jugador1_V_Heineken">.</td> <td id="Jugador1_V_Gatorade">.</td> <td id="Jugador1_V_Nike">.</td> <td id="Jugador1_V_McDonalds">.</td></tr>
+                    <tr id="Jugador2_V_Linea"> <td id="Jugador2_V_Nombre">No Asignado</td> <td id="Jugador2_V_Total">.</td> <td id="Jugador2_V_Cash">.</td> <td id="Jugador2_V_Heineken">.</td> <td id="Jugador2_V_Gatorade">.</td> <td id="Jugador2_V_Nike">.</td> <td id="Jugador2_V_McDonalds">.</td></tr>
+                    <tr id="Jugador3_V_Linea"> <td id="Jugador3_V_Nombre">No Asignado</td> <td id="Jugador3_V_Total">.</td> <td id="Jugador3_V_Cash">.</td> <td id="Jugador3_V_Heineken">.</td> <td id="Jugador3_V_Gatorade">.</td> <td id="Jugador3_V_Nike">.</td> <td id="Jugador3_V_McDonalds">.</td></tr>
+                    <tr id="Jugador4_V_Linea"> <td id="Jugador4_V_Nombre">No Asignado</td> <td id="Jugador4_V_Total">.</td> <td id="Jugador4_V_Cash">.</td> <td id="Jugador4_V_Heineken">.</td> <td id="Jugador4_V_Gatorade">.</td> <td id="Jugador4_V_Nike">.</td> <td id="Jugador4_V_McDonalds">.</td></tr>
+                </table>            
+            </div>
+            <div id="MonitorGraficas">
+                <p id="TituloGraficas" onclick="cambiargraficaLinea()">Estadisticas de Empresas</p>
+                <canvas id="popChart" width="733" height="238" style="margin-left: 4px;"></canvas>
+            </div>
+        </div>
+
+        <div id="MonitorInteractivo">
+            <p id="MInteractivoTituloInteractivo">TRANSACCIONES</p>
+            <div id="MInteractivoHeader" style="width: 275px; margin-top: 12px;">
+                <p style="margin-left: 4px;">TURNO: <span id="TurnoJugador">Sin comenzar</span></p> 
+                <img src="_imagenes/MInteractivoEmpresas.png"> 
+                <form onsubmit="return false;">
+                    <p>
+                        <input type="radio" name="SelectorRadio" id="H_Radio" onclick="calcularPorRadio('H')" style="margin-left: 38px;">
+                        <input type="radio" name="SelectorRadio" id="G_Radio" onclick="calcularPorRadio('G')" style="margin-left: 45px;">
+                        <input type="radio" name="SelectorRadio" id="N_Radio" onclick="calcularPorRadio('N')" style="margin-left: 45px;">
+                        <input type="radio" name="SelectorRadio" id="M_Radio" onclick="calcularPorRadio('M')" style="margin-left: 48px;">
+                        <br><br>
+                        <select id="ComboBox" onchange="limpiarValoresInput()">
+                            <option value="C">Comprar</option>
+                            <option value="V">Vender</option>
+                        </select>
+                        <input id="CantidadInput" type="text" value="Ingrese Valor">
+                        <br><br>
+                        <input id="Finalizar" type="button" value="Finalizar" onclick="finalizarJugada()">
+                        <input id="Ejecutar" type="button" value="EJECUTAR" onclick="ejecutarMovimientosUser()">
+                    </p>
+                </form>         
+            </div>
+            <p id="MInteractivoTituloMaso">Movimientos: Por empezar</p>
+            <div id="MInteractivoMaso" style="margin-left: 4px;">
+                <img id="CartaMaso" onclick="jugadaCartaDelMaso()" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 30px; margin-top: 10px; cursor: pointer;"> 
+                <img id="CartaJugada" style="margin-left: 20px; margin-top: 10px;"> 
+            </div>
+            <p id="MInteractivoTituloCartas_Texto">Acciones de la compañía</p>
+            <div id="MInteractivoCartas" style="margin-left: 4px;">
+                <img id="CartaMaso1" onclick="jugadaCartaDeLaMano(0)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 30px; margin-top: 10px; cursor: pointer;"> 
+                <img id="CartaMaso2" onclick="jugadaCartaDeLaMano(1)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 20px; margin-top: 10px; cursor: pointer;"> 
+                <img id="CartaMaso3" onclick="jugadaCartaDeLaMano(2)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 30px; margin-top: 3px; cursor: pointer;"> 
+                <img id="CartaMaso4" onclick="jugadaCartaDeLaMano(3)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 20px; margin-top: 3px; cursor: pointer;"> 
+            </div>
+        </div>
+
+    </div>
+
+
+<div id="ModalBackend" style="display: none; position: absolute; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
+    <div style="background: #ffffff; padding: 40px; border-radius: 20px; width: 440px; text-align: center; box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.5); border: none;">
+        
+        <div style="margin-bottom: 20px;">
+            <img src="_imagenes/logo75White.png" alt="BWS Logo" style="width: 250px; height: auto; display: block; margin: 0 auto;">
+        </div>
+                
+        <h2 style="color: #89152b; margin-bottom: 5px; font-family: Arial, sans-serif; font-size: 20px; font-weight: bold;">BIENVENIDO A LA BWS by Varo.</h2>
+        <p style="color: #666; font-family: Arial; font-size: 13px; margin-bottom: 25px;">Por favor configure la partida, defina a los jugadores ! </p>
+        
+        <div style="color: #333; font-family: Arial; font-size: 14px; width: 100%;">
+            
+            <div style="display: flex; align-items: center; margin-bottom: 12px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">Jugador 1:</label>
+                <input type="text" id="altasJ1" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; margin-bottom: 12px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">Jugador 2:</label>
+                <input type="text" id="altasJ2" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; margin-bottom: 12px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">Jugador 3:</label>
+                <input type="text" id="altasJ3" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; margin-bottom: 25px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">Jugador 4:</label>
+                <input type="text" id="altasJ4" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+            </div>
+
+        </div>
+
+        <input type="button" value="ESTABLECER JUGADORES" onclick="asignacionInicialJugadores();" style="width: 100%; padding: 15px; background: #89152b; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-family: Arial; font-size: 14px; letter-spacing: 1px;">
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+            <input type="button" value="RESTAURAR" onclick="restoreDataLocalStorage(); document.getElementById('ModalBackend').style.display='none';" style="width: 48%; padding: 8px; background: #f0f0f0; color: #888; border: 1px solid #eee; border-radius: 6px; cursor: pointer; font-size: 10px;">
+            <input type="button" value="LIMPIAR" onclick="sacarNan();" style="width: 48%; padding: 8px; background: #f0f0f0; color: #888; border: 1px solid #eee; border-radius: 6px; cursor: pointer; font-size: 10px;">
+        </div>
+
+    </div>
+</div>
+
+ <div id="ModalCartas" style="display: none; position: absolute; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div id="ModalCajaInterior" style="position: absolute; background-color: white; padding: 30px; border: 2px solid grey; border-radius: 10px; width: 450px; text-align: center; color: black;">
+        <h2 id="ModalHeader" style="cursor: move; font-size: 30px; color: #cc0000;">¡COMPLETAR JUGADA!</h2>
+        <p id="ModalTituloTexto" style="font-weight: bold; margin: 15px 0;"></p>
+        <div id="ModalImagenesOpciones" style="display: flex; justify-content: space-around;"></div>
+        <form id="ModalFormulario" style="display: flex; justify-content: space-around; margin-top: 10px;"></form>
+    </div>
+</div>
+   
+<div id="ModalEspera" style="display: none; position: absolute; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.75); align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+    
+    <div style="text-align: center; padding: 30px; border: 4px solid #cc0000; border-radius: 12px; width: 420px; background-color: white; box-shadow: 0px 10px 50px rgba(0,0,0,0.6);">
+        
+        <div style="margin-bottom: 20px;">
+            <img src="_imagenes/logo75White.png" alt="BWS Logo" style="width: 250px; height: auto; display: block; margin: 0 auto;">
+        </div>
+
+        <h2 style="font-family: 'Arial', sans-serif; font-weight: 900; color: #cc0000; font-size: 22px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">
+            ¡BIENVENIDOS A LA BWS!
+        </h2>
+        
+        <p style="font-family: 'Arial', sans-serif; font-weight: bold; color: #222; font-size: 13px; line-height: 1.5; margin-bottom: 25px;">
+            OTRO JUGADOR ESTÁ ASIGNADO A CREAR LA PARTIDA.<br>
+            POR FAVOR ESPERE LA INICIALIZACIÓN DEL JUEGO.
+        </p>
+
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <div style="width: 28px; height: 28px; border: 3px solid #eee; border-top: 3px solid #cc0000; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</div>
+<div id="ModalSeleccionNombre" style="display: none; position: absolute; z-index: 9999; left: 0; top: 0; width: 1440px; height: 820px; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
+    
+    <div style="background: #ffffff; padding: 50px; border-radius: 25px; width: 550px; min-width: 550px; text-align: center; box-shadow: 0px 20px 60px rgba(0, 0, 0, 0.8); border: none; margin: auto; display: block; position: relative;">
+        
+        <div style="width: 100%; margin-bottom: 30px; display: flex; justify-content: center;">
+            <img src="_imagenes/logo75White.png" alt="BWS Logo" style="width: 320px; height: auto; max-width: 100%; display: block;">
+        </div>
+        
+        <h2 style="color: #89152b; margin-bottom: 15px; font-family: 'Arial', Gadget, sans-serif; font-size: 24px; text-transform: uppercase; white-space: nowrap; width: 100%;">
+            LA PARTIDA YA ESTA ACTIVA !
+        </h2>
+        
+        <p style="color: #444; font-family: Arial, sans-serif; font-size: 16px; margin-bottom: 35px;  width: 100%;">
+            Selecciona una plaza disponible para unirte...
+        </p>
+        
+        <div id="ContenedorBotonesSeleccion" style="display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center;">
+            </div>
+
+        <div id="MensajeEsperaSeleccion" style="display: none; margin-top: 35px; color: #89152b; font-family: Arial; font-size: 16px; font-weight: bold; padding: 20px; border-top: 2px solid #eee; width: 100%;">
+            <span style="display: inline-block; animation: pulse 1.5s infinite; margin-right: 10px;">⌛</span> 
+            Esperando a que los demás elijan...
+        </div>
+        
+    </div>
+</div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
+    <script src="_js/bws.js"></script>
+
+    <script type="text/javascript">
+        function redimensionarJuego() {
+            const contenedor = document.getElementById('ContenedorGeneral');
+            const escalaX = window.innerWidth / 1440;
+            const escalaY = window.innerHeight / 820;
+            const escalaFinal = Math.min(escalaX, escalaY) * 0.98;
+            
+            // EL CAMBIO CLAVE: translate(-50%, -50%) 
+            // Esto ancla el centro del tablero al centro de la pantalla
+            contenedor.style.transform = `translate(-50%, -50%) scale(${escalaFinal})`;
+        }
+
+        window.addEventListener('resize', redimensionarJuego);
+        window.addEventListener('load', redimensionarJuego);
+        
+        // Ejecución inmediata para que no haya salto visual al cargar
+        redimensionarJuego();
+    </script>
+</body>
+</html>

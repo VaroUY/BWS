@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BWS - By Varo</title>
+    <meta charset="utf-8">
+<style type="text/css">
+    /* --- 1. RESET Y ESTRUCTURA GLOBAL --- */
+    * { 
+        margin: 0; 
+        padding: 0; 
+        text-decoration: none; 
+        color: #e0e0e0; 
+        font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif; 
+        box-sizing: border-box; 
+    }
+
+    body {
+        background-color: #050505;
+        margin: 0; padding: 0;
+        width: 100vw; height: 100vh;
+        overflow: hidden; 
+    }
+
+    #ContenedorGeneral {
+        position: absolute;
+        top: 50%; 
+        left: 50%;
+        width: 1440px; 
+        height: 820px; 
+        transform-origin: center center;
+        background-color: #0a0a0a;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        border: 1px solid #1a1a1a;
+    }
+
+    /* --- 2. POSICIONAMIENTO DE MONITORES --- */
+    #LogoTablero { 
+        position: absolute; 
+        top: 0px; 
+        left: 0px; 
+        width: 394px; 
+        border-right: 1px solid #1a1a1a;
+        height: 100%;
+    }
+    
+    #MonitorCentral { 
+        position: absolute; 
+        top: 0px; 
+        left: 402px; 
+        width: 745px;
+        height: 100%;
+    }
+
+    #MonitorInteractivo { 
+        position: absolute; 
+        top: 0px; 
+        left: 1154px; 
+        width: 286px; 
+        height: 820px; 
+        background-color: #0d0d0d; 
+        border-left: 1px solid #1a1a1a;
+    }
+
+    /* --- 3. PANEL DE COTIZACIONES --- */
+    #empresas_valor {
+        background-color: #0d0d0d;
+        width: 394px;
+        padding: 15px 0;
+        border-bottom: 1px solid #1a1a1a;
+    }
+
+    .header-cotizaciones {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    #ContenedorEtiquetas {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+    }
+
+    .item-cotizacion {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 85px;
+    }
+
+    .item-cotizacion .value {
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: -1px;
+    }
+
+    /* Brillos Tecnológicos de Valores */
+    #ValorHeineken  { color: #00ff41; text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+    #ValorGatorade  { color: #00d4ff; text-shadow: 0 0 8px rgba(0, 212, 255, 0.4); }
+    #ValorNike      { color: #ff003c; text-shadow: 0 0 8px rgba(255, 0, 60, 0.4); }
+    #ValorMcDonalds { color: #ffcc00; text-shadow: 0 0 8px rgba(255, 204, 0, 0.4); }
+
+    /* --- 4. CANVAS Y GRÁFICA --- */
+    #canvasBarras {
+        background-color: #0d0d0d;
+        margin-top: 10px;
+        display: block;
+        border-radius: 4px;
+    }
+
+    /* --- 5. COMPONENTES DE INTERFAZ --- */
+    #ComboBox { 
+        background-color: #1a1a1a; 
+        color: #ffcc00; 
+        margin-left: 20px; 
+        padding: 8px; 
+        border: 1px solid #333; 
+        border-radius: 4px;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+    
+    #CantidadInput { 
+        padding: 8px; 
+        width: 125px; 
+        color: #fff; 
+        background-color: #000; 
+        border: 1px solid #444; 
+        border-radius: 4px;
+        text-align: center;
+        font-family: monospace;
+    }
+
+    #Finalizar, #Ejecutar { 
+        padding: 8px; 
+        border-radius: 4px; 
+        font-size: 11px; 
+        font-weight: bold; 
+        text-transform: uppercase; 
+        transition: all 0.2s; 
+    }
+
+    #Finalizar { background-color: #333; color: #aaa; border: 1px solid #444; margin-left: 20px; width: 100px; cursor: pointer; }
+    #Ejecutar { background-color: #89152b; color: white; border: 1px solid #a31934; margin-left: 20px; width: 100px; cursor: pointer; }
+    #Ejecutar:hover { background-color: #a31934; box-shadow: 0 0 15px rgba(163, 25, 52, 0.4); }
+
+    #TituloGraficas, #MonitorSubTitulo { 
+        background: linear-gradient(90deg, #2c1a4d, #462d7d); 
+        margin-top: 5px; 
+        text-align: center; 
+        padding: 6px; 
+        font-size: 14px; 
+        font-weight: bold; 
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    #MInteractivoTituloInteractivo, #MInteractivoTituloMaso, #MInteractivoTituloCartas_Texto { 
+        background: linear-gradient(90deg, #0d3b0d, #1a5c1a); 
+        font-size: 13px; 
+        text-align: center; 
+        padding: 7px; 
+        margin-top: 10px; 
+        font-weight: bold; 
+        letter-spacing: 1px;
+    }
+
+    /* --- 6. TABLAS --- */
+    table { font-size: 13px; border-collapse: collapse; width: 735px; margin-top: 5px; }
+    td { padding: 10px 8px; color: #ccc; border-bottom: 1px solid #1a1a1a; text-align: center; }
+    table tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
+    table tr:hover { background-color: rgba(137,21,43,0.15); }
+    
+    /* Nombres en la tabla */
+    td[id*="_Nombre"] { font-weight: bold; color: #fff; text-align: left; padding-left: 15px; }
+
+    /* --- 7. MODALES --- */
+    .modal-admin {
+        display: none; 
+        position: absolute; 
+        z-index: 20000; 
+        top: 0; left: 0; 
+        width: 1440px; 
+        height: 820px; 
+        background: rgba(0, 0, 0, 0.95); 
+        align-items: center; 
+        justify-content: center;
+    }
+
+    .modal-admin div, .modal-admin h2, .modal-admin p, .modal-admin span, .modal-admin label { color: #333; }
+    .modal-admin button { color: white; cursor: pointer; }
+
+    #BtnAbrirBackend { 
+        position: absolute; bottom: 15px; right: 15px; z-index: 999; 
+        padding: 5px 10px; background: #1a1a1a; color: #555; 
+        border: 1px solid #333; cursor: pointer; font-size: 9px; 
+        border-radius: 3px;
+    }
+    #BtnAbrirBackend:hover { color: #aaa; border-color: #666; }
+</style>
+</head>
+
+<body>
+
+    <div id="ContenedorGeneral">
+        
+        <button id="BtnAbrirBackend" onclick="document.getElementById('ModalBackend').style.display='flex'">SYS_CONFIG</button>
+
+        <div id="LogoTablero">
+            <div id="logo" style="padding: 15px; text-align: center; border-bottom: 1px solid #1a1a1a;">
+                <img src="_imagenes/logo75.png" style="width: 280px; height: auto;">
+            </div>  
+
+            <div id="empresas_valor">
+                <div class="header-cotizaciones">
+                    <img src="_imagenes/empresas_valor75.png" style="width: 240px;"> 
+                </div>
+                
+                <div id="ContenedorEtiquetas">
+                    <div class="item-cotizacion">
+                        <span id="ValorHeineken" class="value">1000</span>
+                    </div>
+                    <div class="item-cotizacion">
+                        <span id="ValorGatorade" class="value">1000</span>
+                    </div>
+                    <div class="item-cotizacion">
+                        <span id="ValorNike" class="value">1000</span>
+                    </div>
+                    <div class="item-cotizacion">
+                        <span id="ValorMcDonalds" class="value">1000</span>
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="canvasBarras" style="height:550px; width: 390px;"></canvas>
+        </div>
+
+        <div id="MonitorCentral">
+            <div id="MonitorHeader" style="padding-top: 5px;">
+                <img src="_imagenes/MonitorHeader.png" style="width: 738px; display: block; margin: 0 auto;">
+            </div>
+            
+            <div id="MonitorEmpresasAcciones">
+                <table>                     
+                    <tr id="Jugador1_Linea"> <td id="Jugador1_Nombre">No Asignado</td> <td id="Jugador1_Total">.</td> <td id="Jugador1_Cash">.</td> <td id="Jugador1_Heineken">.</td> <td id="Jugador1_Gatorade">.</td> <td id="Jugador1_Nike">.</td> <td id="Jugador1_McDonalds">.</td></tr>
+                    <tr id="Jugador2_Linea"> <td id="Jugador2_Nombre">No Asignado</td> <td id="Jugador2_Total">.</td> <td id="Jugador2_Cash">.</td> <td id="Jugador2_Heineken">.</td> <td id="Jugador2_Gatorade">.</td> <td id="Jugador2_Nike">.</td> <td id="Jugador2_McDonalds">.</td></tr>
+                    <tr id="Jugador3_Linea"> <td id="Jugador3_Nombre">No Asignado</td> <td id="Jugador3_Total">.</td> <td id="Jugador3_Cash">.</td> <td id="Jugador3_Heineken">.</td> <td id="Jugador3_Gatorade">.</td> <td id="Jugador3_Nike">.</td> <td id="Jugador3_McDonalds">.</td></tr>
+                    <tr id="Jugador4_Linea"> <td id="Jugador4_Nombre">No Asignado</td> <td id="Jugador4_Total">.</td> <td id="Jugador4_Cash">.</td> <td id="Jugador4_Heineken">.</td> <td id="Jugador4_Gatorade">.</td> <td id="Jugador4_Nike">.</td> <td id="Jugador4_McDonalds">.</td></tr>
+                </table>            
+            </div>
+            
+            <div id="MonitorSubTitulo">Market Valuation Index</div>
+            
+            <div id="MonitorEmpresasValores" style="margin-top: 5px;">
+                <table>                     
+                    <tr id="Jugador1_V_Linea"> <td id="Jugador1_V_Nombre">No Asignado</td> <td id="Jugador1_V_Total">.</td> <td id="Jugador1_V_Cash">.</td> <td id="Jugador1_V_Heineken">.</td> <td id="Jugador1_V_Gatorade">.</td> <td id="Jugador1_V_Nike">.</td> <td id="Jugador1_V_McDonalds">.</td></tr>
+                    <tr id="Jugador2_V_Linea"> <td id="Jugador2_V_Nombre">No Asignado</td> <td id="Jugador2_V_Total">.</td> <td id="Jugador2_V_Cash">.</td> <td id="Jugador2_V_Heineken">.</td> <td id="Jugador2_V_Gatorade">.</td> <td id="Jugador2_V_Nike">.</td> <td id="Jugador2_V_McDonalds">.</td></tr>
+                    <tr id="Jugador3_V_Linea"> <td id="Jugador3_V_Nombre">No Asignado</td> <td id="Jugador3_V_Total">.</td> <td id="Jugador3_V_Cash">.</td> <td id="Jugador3_V_Heineken">.</td> <td id="Jugador3_V_Gatorade">.</td> <td id="Jugador3_V_Nike">.</td> <td id="Jugador3_V_McDonalds">.</td></tr>
+                    <tr id="Jugador4_V_Linea"> <td id="Jugador4_V_Nombre">No Asignado</td> <td id="Jugador4_V_Total">.</td> <td id="Jugador4_V_Cash">.</td> <td id="Jugador4_V_Heineken">.</td> <td id="Jugador4_V_Gatorade">.</td> <td id="Jugador4_V_Nike">.</td> <td id="Jugador4_V_McDonalds">.</td></tr>
+                </table>            
+            </div>
+            
+            <div id="MonitorGraficas">
+                <p id="TituloGraficas" onclick="cambiargraficaLinea()" style="cursor: pointer;">Live Analytics / History</p>
+                <canvas id="popChart" width="733" height="238" style="margin-top: 10px;"></canvas>
+            </div>
+        </div>
+
+        <div id="MonitorInteractivo">
+            <p id="MInteractivoTituloInteractivo">CONTROL CENTER</p>
+            <div id="MInteractivoHeader" style="width: 275px; margin-top: 12px; padding: 0 5px;">
+                <p style="font-size: 11px; margin-bottom: 10px; color: #888; text-align: center;">USER_SESSION: <span id="TurnoJugador" style="color: #00d4ff; font-weight: bold;">Sin comenzar</span></p> 
+                <img src="_imagenes/MInteractivoEmpresas.png" style="width: 260px; display: block; margin: 0 auto;"> 
+                <form onsubmit="return false;">
+                    <div style="margin-top: 10px;">
+                        <input type="radio" name="SelectorRadio" id="H_Radio" onclick="calcularPorRadio('H')" style="margin-left: 36px; filter: hue-rotate(90deg);">
+                        <input type="radio" name="SelectorRadio" id="G_Radio" onclick="calcularPorRadio('G')" style="margin-left: 44px; filter: hue-rotate(180deg);">
+                        <input type="radio" name="SelectorRadio" id="N_Radio" onclick="calcularPorRadio('N')" style="margin-left: 44px; filter: hue-rotate(0deg);">
+                        <input type="radio" name="SelectorRadio" id="M_Radio" onclick="calcularPorRadio('M')" style="margin-left: 48px; filter: hue-rotate(45deg);">
+                        <br><br>
+                        <select id="ComboBox" onchange="limpiarValoresInput()">
+                            <option value="C">Comprar</option>
+                            <option value="V">Vender</option>
+                        </select>
+                        <input id="CantidadInput" type="text" placeholder="Value">
+                        <br><br>
+                        <div style="display: flex; gap: 5px;">
+                            <input id="Finalizar" type="button" value="PASAR" onclick="finalizarJugada()">
+                            <input id="Ejecutar" type="button" value="EXECUTE" onclick="ejecutarMovimientosUser()">
+                        </div>
+                    </div>
+                </form>         
+            </div>
+            
+            <p id="MInteractivoTituloMaso">Main Stock Deck</p>
+            <div id="MInteractivoMaso" style="text-align: center;">
+                <img id="CartaMaso" onclick="jugadaCartaDelMaso()" src="_imagenes/CartaEjemploAtras.png" style="width: 80px; margin-top: 10px; cursor: pointer; transition: transform 0.2s;"> 
+                <img id="CartaJugada" style="width: 80px; margin-top: 10px; margin-left: 10px;"> 
+            </div>
+            
+            <p id="MInteractivoTituloCartas_Texto">Holding Inventory</p>
+            <div id="MInteractivoCartas" style="display: grid; grid-template-columns: 1fr 1fr; padding: 10px; gap: 5px; justify-items: center;">
+                <img id="CartaMaso1" onclick="jugadaCartaDeLaMano(0)" src="_imagenes/CartaEjemploAtras.png" style="width: 80px; cursor: pointer;"> 
+                <img id="CartaMaso2" onclick="jugadaCartaDeLaMano(1)" src="_imagenes/CartaEjemploAtras.png" style="width: 80px; cursor: pointer;"> 
+                <img id="CartaMaso3" onclick="jugadaCartaDeLaMano(2)" src="_imagenes/CartaEjemploAtras.png" style="width: 80px; cursor: pointer;"> 
+                <img id="CartaMaso4" onclick="jugadaCartaDeLaMano(3)" src="_imagenes/CartaEjemploAtras.png" style="width: 80px; cursor: pointer;"> 
+            </div>
+        </div>
+
+    </div>
+
+    <div id="ModalBackend" style="display: none; position: absolute; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
+        <div style="background: #ffffff; padding: 40px; border-radius: 20px; width: 440px; text-align: center; box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.5); border: none;">
+            <div style="margin-bottom: 20px;">
+                <img src="_imagenes/logo75White.png" alt="BWS Logo" style="width: 250px; height: auto; display: block; margin: 0 auto;">
+            </div>
+            <h2 style="color: #89152b; margin-bottom: 5px; font-family: Arial, sans-serif; font-size: 20px; font-weight: bold;">SYSTEM CONFIGURATION</h2>
+            <p style="color: #666; font-family: Arial; font-size: 13px; margin-bottom: 25px;">Inicialice los parámetros de sesión.</p>
+            <div style="color: #333; font-family: Arial; font-size: 14px; width: 100%;">
+                <div style="display: flex; align-items: center; margin-bottom: 12px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                    <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                    <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">J-01:</label>
+                    <input type="text" id="altasJ1" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 12px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                    <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                    <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">J-02:</label>
+                    <input type="text" id="altasJ2" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 12px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                    <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                    <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">J-03:</label>
+                    <input type="text" id="altasJ3" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 25px; background: #fdfdfd; padding: 5px 10px; border-radius: 10px;">
+                    <img src="_imagenes/IconoUser.png" style="width: 24px; height: 24px; margin-right: 12px;">
+                    <label style="font-weight: bold; color: #555; min-width: 80px; text-align: left;">J-04:</label>
+                    <input type="text" id="altasJ4" value="..." style="flex-grow: 1; margin-left: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; color: #89152b; padding: 8px 12px; font-weight: bold; outline: none;">
+                </div>
+            </div>
+            <input type="button" value="DEPLOY SESSION" onclick="asignacionInicialJugadores();" style="width: 100%; padding: 15px; background: #89152b; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-family: Arial; font-size: 14px; letter-spacing: 1px;">
+            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <input type="button" value="RESTORE" onclick="restoreDataLocalStorage(); document.getElementById('ModalBackend').style.display='none';" style="width: 48%; padding: 8px; background: #f0f0f0; color: #888; border: 1px solid #eee; border-radius: 6px; cursor: pointer; font-size: 10px;">
+                <input type="button" value="PURGE" onclick="sacarNan();" style="width: 48%; padding: 8px; background: #f0f0f0; color: #888; border: 1px solid #eee; border-radius: 6px; cursor: pointer; font-size: 10px;">
+            </div>
+        </div>
+    </div>
+
+    <div id="ModalCartas" style="display: none; position: absolute; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+        <div id="ModalCajaInterior" style="position: absolute; background-color: white; padding: 30px; border: 1px solid #ccc; border-radius: 15px; width: 450px; text-align: center; color: black; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            <h2 id="ModalHeader" style="cursor: move; font-size: 26px; color: #89152b; font-weight: 900; letter-spacing: -1px;">CONFIRM ACTION</h2>
+            <p id="ModalTituloTexto" style="font-weight: bold; margin: 15px 0; color: #555;"></p>
+            <div id="ModalImagenesOpciones" style="display: flex; justify-content: space-around; padding: 10px;"></div>
+            <form id="ModalFormulario" style="display: flex; justify-content: space-around; margin-top: 15px;"></form>
+        </div>
+    </div>
+   
+    <div id="ModalEspera" style="display: none; position: absolute; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="text-align: center; padding: 40px; border-radius: 20px; width: 420px; background-color: white; box-shadow: 0px 20px 60px rgba(0,0,0,0.8);">
+            <div style="margin-bottom: 25px;">
+                <img src="_imagenes/logo75White.png" alt="BWS Logo" style="width: 250px; height: auto; display: block; margin: 0 auto;">
+            </div>
+            <h2 style="font-family: Arial, sans-serif; font-weight: 900; color: #89152b; font-size: 22px; margin-bottom: 12px; text-transform: uppercase;">AWAITING INIT</h2>
+            <p style="font-family: Arial, sans-serif; color: #444; font-size: 13px; line-height: 1.5; margin-bottom: 30px; font-weight: 500;">Sincronizando con el servidor de partida.<br>Espere a que el administrador inicie la sesión.</p>
+            <div style="display: flex; justify-content: center; align-items: center;">
+                <div style="width: 32px; height: 32px; border: 4px solid #f3f3f3; border-top: 4px solid #89152b; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+        </div>
+        <style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+    </div>
+
+    <div id="ModalSeleccionNombre" style="display: none; position: absolute; z-index: 9999; left: 0; top: 0; width: 1440px; height: 820px; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
+        <div style="background: #ffffff; padding: 50px; border-radius: 25px; width: 550px; text-align: center; box-shadow: 0px 20px 60px rgba(0, 0, 0, 0.8);">
+            <div style="width: 100%; margin-bottom: 30px; display: flex; justify-content: center;">
+                <img src="_imagenes/logo75White.png" alt="BWS Logo" style="width: 300px; height: auto;">
+            </div>
+            <h2 style="color: #89152b; margin-bottom: 10px; font-family: Arial, sans-serif; font-size: 22px; text-transform: uppercase; font-weight: 900;">SESSION ACTIVE</h2>
+            <p style="color: #666; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 35px;">Seleccione su terminal de acceso para unirse a la partida.</p>
+            <div id="ContenedorBotonesSeleccion" style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center;"></div>
+            <div id="MensajeEsperaSeleccion" style="display: none; margin-top: 35px; color: #89152b; font-family: Arial; font-size: 15px; font-weight: bold; padding: 20px; border-top: 1px solid #eee;">
+                <span style="display: inline-block; animation: pulse 1.5s infinite; margin-right: 10px;">⌛</span> VERIFYING ACCESS...
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
+    <script src="_js/bws.js"></script>
+
+    <script type="text/javascript">
+        function redimensionarJuego() {
+            const contenedor = document.getElementById('ContenedorGeneral');
+            const escalaX = window.innerWidth / 1440;
+            const escalaY = window.innerHeight / 820;
+            const escalaFinal = Math.min(escalaX, escalaY) * 0.98;
+            contenedor.style.transform = `translate(-50%, -50%) scale(${escalaFinal})`;
+        }
+        window.addEventListener('resize', redimensionarJuego);
+        window.addEventListener('load', redimensionarJuego);
+        redimensionarJuego();
+    </script>
+</body>
+</html>

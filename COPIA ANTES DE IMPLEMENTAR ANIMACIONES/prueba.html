@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>BWS - Game Board</title>
+    <meta charset="utf-8">
+    <style type="text/css">
+        /* --- ESTRUCTURA DE CONTENCIÓN Y ESCALADO --- */
+        body {
+            background-color: black;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* El juego siempre encaja, no hace falta scroll */
+        }
+
+        #ContenedorGeneral {
+            position: relative;
+            width: 1440px; 
+            height: 820px; 
+            transform-origin: center center;
+            flex-shrink: 0;
+        }
+
+        /* --- BOTÓN FLOTANTE PARA ABRIR BACKEND --- */
+        #BtnAbrirBackend {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            z-index: 999;
+            padding: 5px 10px;
+            background: #333;
+            color: #666;
+            border: 1px solid #444;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        #BtnAbrirBackend:hover { color: white; border-color: white; }
+
+        /* --- ESTILOS ORIGINALES INTACTOS --- */
+        * {margin: 0; padding: 0;  text-decoration:1;color: white;}
+        *{font-family: helvetica; }
+        div {border-style: none;margin: 0; padding: 0; border-color: red; }
+        
+        #LogoTablero {position:absolute; top:0px; bottom: 20PX;}
+        #MonitorCentral { position:absolute; top:0px; left: 402px; bottom: 10PX;}
+        #MonitorInteractivo { position:absolute; top:0px; left: 1154px; bottom: 20PX;}
+
+        #Cotizaciones { font-family: Helvetica; font-weight:bold; font-size:25px; margin-top: 10px; }
+        .separador {color:red;}
+        #Cotizaciones li { display:inline; padding-left:25px; padding-right:10px; }
+        #Cotizaciones a { color: yellow; }
+
+        table { font-family:Helvetica; font-size: 15px; border-collapse: collapse; width: 735px; height: 200px; }
+        td { padding: 8px; color: white; width: 200px; }
+        table tr:nth-child(even) { background-color: rgb(40,41,35); }
+
+        #ComboBox { background-color: black; color: yellow; margin-left: 20px; padding: 5px; }
+        #CantidadInput { padding: 5px; width: 125px; color: yellow; background-color: black; border: 0.5px solid grey; }
+        #Finalizar, #Ejecutar { padding: 3px; background-color: rgb(137,21,43); color: white; border-color: darkred; margin-left: 20px; width: 100px; cursor: pointer; }
+        
+        #TituloGraficas, #MonitorSubTitulo, #MInteractivoTituloMaso, #MInteractivoTituloInteractivo {
+            margin-top: 6px; color: white; font-family: Arial; font-size: 20px; text-align: center; padding: 3px;
+        }
+        #MInteractivoTituloInteractivo, #MInteractivoTituloMaso_Texto, #MInteractivoTituloCartas_Texto {
+            background-color: darkgreen; font-size: 18px; margin-left: 2px;
+        }
+    </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="_js/bws.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
+</head>
+
+<body>
+
+    <button id="BtnAbrirBackend" onclick="document.getElementById('ModalBackend').style.display='flex'">CONFIG</button>
+
+    <div id="ContenedorGeneral">
+        <div id="LogoTablero">
+            <div id="logo">
+                <img src="_imagenes/logo75.png" onclick="restoreAnteriorDataLocalStorage()"> 
+            </div>	
+            <div id="empresas_valor" style="background-color: rgb(24,24,24); width: 394px;">
+                <img src="_imagenes/empresas_valor75.png"> 
+                <ul id="Cotizaciones" style="border: 0.5px solid grey;">
+                    <li><a id="ValorHeineken">1000</a></li>
+                    <li><a id="ValorGatorade">1000</a></li>
+                    <li><a id="ValorNike">1000</a></li>
+                    <li><a id="ValorMcDonalds">1000</a></li>
+                </ul>
+            </div>
+            <canvas id="canvasBarras" style="background-color: rgb(24,24,24); margin-left: 3px; height:558px; width: 390px;"></canvas>
+        </div>
+
+        <div id="MonitorCentral">
+            <div id="MonitorHeader"><img src="_imagenes/MonitorHeader.png" style="margin-left: 2px;"></div>
+            <div id="MonitorEmpresasAcciones" style="margin-left: 4px;">
+                <table>   					
+                    <tr id="Jugador1_Linea"> <td id="Jugador1_Nombre">No Asignado</td> <td id="Jugador1_Total">.</td> <td id="Jugador1_Cash">.</td> <td id="Jugador1_Heineken">.</td> <td id="Jugador1_Gatorade">.</td> <td id="Jugador1_Nike">.</td> <td id="Jugador1_McDonalds">.</td></tr>
+                    <tr id="Jugador2_Linea"> <td id="Jugador2_Nombre">No Asignado</td> <td id="Jugador2_Total">.</td> <td id="Jugador2_Cash">.</td> <td id="Jugador2_Heineken">.</td> <td id="Jugador2_Gatorade">.</td> <td id="Jugador2_Nike">.</td> <td id="Jugador2_McDonalds">.</td></tr>
+                    <tr id="Jugador3_Linea"> <td id="Jugador3_Nombre">No Asignado</td> <td id="Jugador3_Total">.</td> <td id="Jugador3_Cash">.</td> <td id="Jugador3_Heineken">.</td> <td id="Jugador3_Gatorade">.</td> <td id="Jugador3_Nike">.</td> <td id="Jugador3_McDonalds">.</td></tr>
+                    <tr id="Jugador4_Linea"> <td id="Jugador4_Nombre">No Asignado</td> <td id="Jugador4_Total">.</td> <td id="Jugador4_Cash">.</td> <td id="Jugador4_Heineken">.</td> <td id="Jugador4_Gatorade">.</td> <td id="Jugador4_Nike">.</td> <td id="Jugador4_McDonalds">.</td></tr>
+                </table>			
+            </div>
+            <div id="MonitorSubTitulo" style="background-color: rgb(70,45,125);">Valor Accionario</div>
+            <div id="MonitorEmpresasValores" style="margin-top: 8px;">
+                <table>   					
+                    <tr id="Jugador1_V_Linea"> <td id="Jugador1_V_Nombre">No Asignado</td> <td id="Jugador1_V_Total">.</td> <td id="Jugador1_V_Cash">.</td> <td id="Jugador1_V_Heineken">.</td> <td id="Jugador1_V_Gatorade">.</td> <td id="Jugador1_V_Nike">.</td> <td id="Jugador1_V_McDonalds">.</td></tr>
+                    <tr id="Jugador2_V_Linea"> <td id="Jugador2_V_Nombre">No Asignado</td> <td id="Jugador2_V_Total">.</td> <td id="Jugador2_V_Cash">.</td> <td id="Jugador2_V_Heineken">.</td> <td id="Jugador2_V_Gatorade">.</td> <td id="Jugador2_V_Nike">.</td> <td id="Jugador2_V_McDonalds">.</td></tr>
+                    <tr id="Jugador3_V_Linea"> <td id="Jugador3_V_Nombre">No Asignado</td> <td id="Jugador3_V_Total">.</td> <td id="Jugador3_V_Cash">.</td> <td id="Jugador3_V_Heineken">.</td> <td id="Jugador3_V_Gatorade">.</td> <td id="Jugador3_V_Nike">.</td> <td id="Jugador3_V_McDonalds">.</td></tr>
+                    <tr id="Jugador4_V_Linea"> <td id="Jugador4_V_Nombre">No Asignado</td> <td id="Jugador4_V_Total">.</td> <td id="Jugador4_V_Cash">.</td> <td id="Jugador4_V_Heineken">.</td> <td id="Jugador4_V_Gatorade">.</td> <td id="Jugador4_V_Nike">.</td> <td id="Jugador4_V_McDonalds">.</td></tr>
+                </table>			
+            </div>
+            <div id="MonitorGraficas">
+                <p id="TituloGraficas" style="background-color: rgb(70,45,125);" onclick="cambiargraficaLinea()">Estadisticas de Empresas</p>
+                <canvas id="popChart" width="733" height="238" style="margin-left: 4px;"></canvas>
+            </div>
+        </div>
+
+        <div id="MonitorInteractivo" style="width: 279px; height: 810px; background-color: rgb(24,24,24)">
+            <p id="MInteractivoTituloInteractivo">TRANSACCIONES</p>
+            <div id="MInteractivoHeader" style="width: 275px; color: white; margin-top: 12px;">
+                <p style="margin-left: 4px;">TURNO: <span id="TurnoJugador">Sin comenzar</span></p> 
+                <img src="_imagenes/MInteractivoEmpresas.png"> 
+                <form onsubmit="return false;">
+                    <p>
+                        <input type="radio" name="SelectorRadio" id="H_Radio" onclick="calcularPorRadio('H')" style="margin-left: 38px;">
+                        <input type="radio" name="SelectorRadio" id="G_Radio" onclick="calcularPorRadio('G')" style="margin-left: 45px;">
+                        <input type="radio" name="SelectorRadio" id="N_Radio" onclick="calcularPorRadio('N')" style="margin-left: 45px;">
+                        <input type="radio" name="SelectorRadio" id="M_Radio" onclick="calcularPorRadio('M')" style="margin-left: 48px;">
+                        <br><br>
+                        <select id="ComboBox" onchange="limpiarValoresInput()">
+                            <option value="C">Comprar</option>
+                            <option value="V">Vender</option>
+                        </select>
+                        <input id="CantidadInput" type="text" value="Ingrese Valor">
+                        <br><br>
+                        <input id="Finalizar" type="button" value="Finalizar" onclick="finalizarJugada()">
+                        <input id="Ejecutar" type="button" value="EJECUTAR" onclick="ejecutarMovimientosUser()">
+                    </p>
+                </form>			
+            </div>
+            <p id="MInteractivoTituloMaso_Texto">Movimientos: Por empezar</p>
+            <div id="MInteractivoMaso" style="margin-left: 4px;">
+                <img id="CartaMaso" onclick="jugadaCartaDelMaso()" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 30px; margin-top: 10px; cursor: pointer;"> 
+                <img id="CartaJugada" style="margin-left: 20px; margin-top: 10px;"> 
+            </div>
+            <p id="MInteractivoTituloCartas_Texto">Acciones de la compañía</p>
+            <div id="MInteractivoCartas" style="margin-left: 4px;">
+                <img id="CartaMaso1" onclick="jugadaCartaDeLaMano(0)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 30px; margin-top: 10px; cursor: pointer;"> 
+                <img id="CartaMaso2" onclick="jugadaCartaDeLaMano(1)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 20px; margin-top: 10px; cursor: pointer;"> 
+                <img id="CartaMaso3" onclick="jugadaCartaDeLaMano(2)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 30px; margin-top: 3px; cursor: pointer;"> 
+                <img id="CartaMaso4" onclick="jugadaCartaDeLaMano(3)" src="_imagenes/CartaEjemploAtras.png" style="margin-left: 20px; margin-top: 3px; cursor: pointer;"> 
+            </div>
+        </div>
+    </div>
+
+    <div id="ModalBackend" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
+        <div style="background: #222; padding: 20px; border: 1px solid grey; width: 400px; text-align: left;">
+            <h2 style="color: red; margin-bottom: 15px;">BACKEND BWS</h2>
+            <p>Jugador 1: <input type="text" id="altasJ1" value="..." style="background:none; border:1px solid #444; color:white;"></p>
+            <p>Jugador 2: <input type="text" id="altasJ2" value="..." style="background:none; border:1px solid #444; color:white;"></p>
+            <p>Jugador 3: <input type="text" id="altasJ3" value="..." style="background:none; border:1px solid #444; color:white;"></p>
+            <p>Jugador 4: <input type="text" id="altasJ4" value="..." style="background:none; border:1px solid #444; color:white;"></p>
+            <br>
+            <input type="button" value=" COMENZAR " onclick="asignacionInicialJugadores(); document.getElementById('ModalBackend').style.display='none';" style="width: 100%; padding: 10px; background: green; color: white;">
+            <br><br>
+            <input type="button" value=" RESTAURAR " onclick="restoreDataLocalStorage(); document.getElementById('ModalBackend').style.display='none';" style="width: 48%;">
+            <input type="button" value=" BORRAR NAN " onclick="sacarNan();" style="width: 48%;">
+            <br><br>
+            <button onclick="document.getElementById('ModalBackend').style.display='none'" style="width: 100%; background: #444;">CERRAR</button>
+        </div>
+    </div>
+
+    <div id="ModalCartas" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100vw; height: 100vh; background-color: transparent; align-items: center; justify-content: center;">
+        <div id="ModalCajaInterior" style="position: absolute; background-color: white; padding: 30px; border: 2px solid grey; border-radius: 10px; width: 450px; text-align: center; color: black;">
+            <h2 id="ModalHeader" style="cursor: move; font-size: 30px; color: #cc0000;">¡COMPLETAR JUGADA!</h2>
+            <p id="ModalTituloTexto" style="margin-bottom: 25px; font-weight: bold;"></p>
+            <div id="ModalImagenesOpciones" style="margin-bottom: 15px; display: flex; justify-content: space-around;"></div>
+            <form id="ModalFormulario" style="display: flex; justify-content: space-around;"></form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function adaptarPantalla() {
+            const contenedor = document.getElementById('ContenedorGeneral');
+            const anchoDiseno = 1440;
+            const altoDiseno = 820;
+
+            // Priorizamos que el alto encaje al 100% en la pantalla
+            const escalaY = window.innerHeight / altoDiseno;
+            const escalaX = window.innerWidth / anchoDiseno;
+            
+            // Usamos la menor de las dos escalas para asegurar visibilidad total
+            const escalaFinal = Math.min(escalaX, escalaY) * 0.98;
+
+            contenedor.style.transform = `scale(${escalaFinal})`;
+        }
+
+        window.addEventListener('resize', adaptarPantalla);
+        window.addEventListener('load', adaptarPantalla);
+    </script>
+
+</body>
+</html>

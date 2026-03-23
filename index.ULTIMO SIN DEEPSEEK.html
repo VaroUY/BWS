@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>
+   BWS - By Varo
+  </title>
+  <meta charset="utf-8"/>
+  <style type="text/css">
+   input:disabled, select:disabled {
+            cursor: not-allowed !important;
+        }
+
+        /* --- 1. RESET Y ESTRUCTURA GLOBAL --- */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            text-decoration: none; 
+            color: white;
+            font-family: 'Helvetica', 'Arial', sans-serif; 
+            box-sizing: border-box; 
+        }
+
+        body {
+            background-color: black;
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            overflow: hidden; 
+        }
+
+        #ContenedorGeneral {
+            position: absolute;
+            top: 50%; 
+            left: 50%;
+            width: 1440px; 
+            height: 820px; 
+            transform-origin: center center;
+            background-color: black;
+        }
+
+        /* --- 2. POSICIONAMIENTO DE MONITORES --- */
+        #LogoTablero { 
+            position: absolute; top: 0px; left: 0px; width: 380px;
+            height: 820px;
+            background: #060a0e;
+            border: 0.2px solid #4a0a10;
+            overflow: hidden;
+        }
+        #MonitorCentral { 
+            position: absolute; top: 0px; left: 399px;
+            height: 820px;
+            overflow: hidden;
+            border-left: 0.2px solid #555;
+            border-top: 0.2px solid #555;
+        }
+        #MonitorInteractivo { 
+            position: absolute; 
+            top: 0px; left: 1166px; 
+            width: 274px; height: 820px; 
+            background-color: #000000;
+            border: 0.2px solid #5b2d8e;
+        }
+
+        /* --- 3. PANEL DE COTIZACIONES --- */
+        #empresas_valor {
+            background-color: #060a0e;
+            width: 100%;
+            padding-bottom: 5px;
+        }
+
+        .header-cotizaciones {
+            text-align: center;
+            padding: 0;
+        }
+
+        #ContenedorEtiquetas {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 0 5px;
+            margin-top: -8px; 
+        }
+
+        .item-cotizacion {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 85px;
+        }
+
+        .item-cotizacion .value {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        /* Brillos de Valores */
+        #ValorHeineken  { color: #28a745; text-shadow: 0 0 10px rgba(40, 167, 69, 0.6); }
+        #ValorGatorade  { color: #adb5bd; text-shadow: 0 0 10px rgba(173, 181, 189, 0.6); }
+        #ValorNike      { color: #dc3545; text-shadow: 0 0 10px rgba(220, 53, 69, 0.6); }
+        #ValorMcDonalds { color: #ffc107; text-shadow: 0 0 10px rgba(255, 193, 7, 0.6); }
+
+        /* --- 4. CANVAS Y GRÁFICA --- */
+        #canvasBarras {
+            background-color: #060a0e;
+            margin-left: 2px;
+            display: block;
+        }
+
+        /* --- 5. COMPONENTES DE INTERFAZ --- */
+        #ComboBox { display: none; }
+
+        /* ---- MONITOR INTERACTIVO - REDESIGN ---- */
+        #MonitorInteractivo {
+            background: #000000;
+            border: 0.2px solid #5b2d8e;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+        }
+
+        #MInteractivoTituloInteractivo {
+            background: linear-gradient(90deg, #0e0618 0%, #1a0d2e 50%, #0e0618 100%) !important;
+            color: #a855f7 !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 4px !important;
+            text-transform: uppercase !important;
+            padding: 6px 8px !important;
+            margin-top: 0 !important;
+            text-align: center !important;
+            border-bottom: 1px solid #5b2d8e !important;
+            border-top: none !important;
+        }
+
+        #MInteractivoTituloMaso {
+            background: linear-gradient(90deg, #0e0618 0%, #1a0d2e 50%, #0e0618 100%) !important;
+            color: #a855f7 !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 3px !important;
+            text-transform: uppercase !important;
+            padding: 4px 8px !important;
+            margin-top: 2px !important;
+            text-align: center !important;
+            border-top: 1px solid #5b2d8e !important;
+            border-bottom: 1px solid #5b2d8e !important;
+        }
+
+        #MInteractivoTituloCartas_Texto {
+            background: linear-gradient(90deg, #0e0618 0%, #1a0d2e 50%, #0e0618 100%) !important;
+            color: #a855f7 !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 3px !important;
+            text-transform: uppercase !important;
+            padding: 4px 8px !important;
+            margin-top: 2px !important;
+            text-align: center !important;
+            border-top: 1px solid #5b2d8e !important;
+            border-bottom: 1px solid #5b2d8e !important;
+        }
+
+        /* Turno label */
+        #MInteractivoHeader > p {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #7c4daa;
+            text-transform: uppercase;
+            padding: 4px 10px 2px 10px;
+        }
+        #MInteractivoHeader > p span {
+            color: #a855f7;
+            text-shadow: 0 0 8px rgba(46,204,113,0.5);
+        }
+
+        /* Controles — grid de 2 columnas para alinear combo/input con finalizar/ejecutar */
+        #MInteractivoHeader form {
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Fila radios — sin borde ni fondo */
+        #MInteractivoHeader form > p:first-child {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 2px 0;
+            margin: 0;
+            background: none;
+            border: none;
+            border-radius: 0;
+        }
+
+        /* Fila combo + input — mismo ancho proporcional que botones */
+        #fila-inputs {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* Fila botones */
+        #fila-botones {
+            display: flex;
+            gap: 6px;
+        }
+
+        #ComboBoxWrapper {
+            flex: 1;
+            position: relative;
+            margin-left: 0 !important;
+        }
+
+        #ComboBoxSelected {
+            font-size: 11px !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            height: 26px !important;
+            line-height: 26px !important;
+            padding: 0 8px !important;
+            background: #130a24 !important;
+            color: #a855f7 !important;
+            border: 1px solid #5b2d8e !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            min-width: unset !important;
+            box-sizing: border-box !important;
+        }
+
+        #ComboBoxSelected:hover {
+            background: #0f2e1c !important;
+            border-color: #a855f7 !important;
+        }
+
+        #ComboBoxOptions {
+            background: #130a24 !important;
+            border: 1px solid #5b2d8e !important;
+            border-radius: 4px !important;
+            width: 100% !important;
+        }
+
+        #ComboBoxOptions div {
+            font-size: 11px !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            color: #a855f7 !important;
+            padding: 5px 8px !important;
+        }
+
+        #ComboBoxOptions div:hover {
+            background: rgba(46,204,113,0.1) !important;
+        }
+
+        #CantidadInput {
+            flex: 1;
+            padding: 0 6px !important;
+            height: 26px !important;
+            width: auto !important;
+            color: #a855f7 !important;
+            background: #130a24 !important;
+            border: 1px solid #5b2d8e !important;
+            border-radius: 4px !important;
+            margin-left: 0 !important;
+            font-family: 'Share Tech Mono', monospace !important;
+            font-size: 11px !important;
+            box-sizing: border-box !important;
+        }
+
+        #CantidadInput:focus {
+            outline: none !important;
+            border-color: #a855f7 !important;
+            box-shadow: 0 0 6px rgba(46,204,113,0.2) !important;
+        }
+
+        #Finalizar {
+            flex: 1;
+            padding: 4px 4px !important;
+            height: 26px !important;
+            background: #1a0a10 !important;
+            color: #cc4466 !important;
+            border: 1px solid #89152b !important;
+            border-radius: 4px !important;
+            margin-left: 0 !important;
+            width: auto !important;
+            cursor: pointer !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            transition: all 0.2s !important;
+            box-sizing: border-box !important;
+        }
+
+        #Finalizar:disabled {
+            background: #1e1e1e !important;
+            color: #555 !important;
+            border-color: #333 !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+        }
+
+        #Finalizar:not(:disabled):hover {
+            background: #2a0f18 !important;
+            border-color: #cc0000 !important;
+            color: #ff4466 !important;
+            box-shadow: 0 0 8px rgba(204,0,0,0.3) !important;
+        }
+
+        #Ejecutar {
+            flex: 1;
+            padding: 4px 4px !important;
+            height: 26px !important;
+            background: #0e0618 !important;
+            color: #a855f7 !important;
+            border: 1px solid #5b2d8e !important;
+            border-radius: 4px !important;
+            margin-left: 0 !important;
+            width: auto !important;
+            cursor: pointer !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 1px !important;
+            transition: all 0.2s !important;
+            box-sizing: border-box !important;
+        }
+
+        #Ejecutar:disabled {
+            background: #1e1e1e !important;
+            color: #555 !important;
+            border-color: #333 !important;
+            cursor: not-allowed !important;
+        }
+
+        #Ejecutar:not(:disabled):hover {
+            background: #0a2518 !important;
+            border-color: #a855f7 !important;
+            box-shadow: 0 0 8px rgba(46,204,113,0.3) !important;
+        }
+
+        /* Cartas — tamaños originales, sin bordes extra */
+        #MInteractivoMaso {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 6px;
+            margin-left: 0 !important;
+        }
+
+        #MInteractivoCartas {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0;
+            padding: 0 4px;
+            margin-left: 0 !important;
+        }
+
+        /* Sin bordes en las cartas — la imagen ya los trae */
+        #MInteractivoMaso img, #MInteractivoCartas img {
+            margin: 3px !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            transition: opacity 0.2s !important;
+        }
+
+        #MInteractivoMaso img:hover, #MInteractivoCartas img:hover {
+            opacity: 0.85 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Botón historial */
+        #MInteractivoCartas > div button,
+        #MInteractivoCartas button {
+            background: #130a24 !important;
+            color: #7c4daa !important;
+            border: 1px solid #5b2d8e !important;
+            border-radius: 4px !important;
+            padding: 3px 14px !important;
+            font-size: 10px !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 2px !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+        }
+
+        #MInteractivoCartas > div button:hover,
+        #MInteractivoCartas button:hover {
+            color: #a855f7 !important;
+            border-color: #a855f7 !important;
+        }
+
+        /* Títulos tamaño aumentado */
+/* --- TÍTULO IMPACT CORREGIDO (ANCHO TOTAL) --- */
+#MInteractivoTituloInteractivo { 
+    /* 1. Estructura de bloque total */
+    display: block !important; 
+    width: 100% !important;
+    
+    /* 2. Fuente Impact con el nuevo color (20% más verde) */
+    font-family: 'Impact', 'Arial Black', sans-serif !important;
+    font-size: 26px !important; /* Bajamos 2px para ayudar a que se vea menos gruesa */
+    color: #d4aaff !important; /* Verde menta más saturado y claro */
+    
+    /* 3. Sin sombra y ajuste de grosor visual */
+    text-shadow: none !important; 
+    font-weight: normal !important;
+    letter-spacing: 1.5px !important; /* Un poco más de aire para que la letra no se vea tan maciza */
+    
+    /* 4. Altura y espacios */
+    line-height: 1.2 !important;
+    padding: 10px 0 !important;
+    margin-bottom: 5px !important;
+
+    /* 5. Fondo y bordes */
+    background: linear-gradient(90deg, #0e0618 0%, #1a0d2e 50%, #0e0618 100%) !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    border-bottom: 2px solid #5b2d8e !important;
+    box-sizing: border-box !important;
+}
+        #MInteractivoTituloMaso { font-size: 12px !important; }
+        #MInteractivoTituloCartas_Texto { font-size: 12px !important; }
+        #MInteractivoHeader > p { font-size: 13px; }
+        #MInteractivoHeader > p span { font-size: 15px; }
+
+        /* Grid 2x2 para controles */
+        #fila-inputs, #fila-botones {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+        }
+        #ComboBoxWrapper { position: relative; }
+        #CantidadInput { width: 100% !important; flex: unset !important; }
+        #Finalizar { width: 100% !important; flex: unset !important; }
+        #Ejecutar  { width: 100% !important; flex: unset !important; }
+
+        /* Cartas jugador: ancho fijo igual a CartaMaso */
+        #MInteractivoCartas {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            gap: 4px !important;
+            padding: 4px 8px !important;
+        }
+        #MInteractivoCartas img {
+            width: 100px !important;
+            height: auto !important;
+            flex-shrink: 0 !important;
+        }
+
+        #TituloGraficas, #MonitorSubTitulo { background-color: rgb(70,45,125); margin-top: 5px; text-align: center; padding: 4px; font-size: 18px; }
+
+        /* --- 6. TABLAS MONITOR CENTRAL - TRADING TERMINAL STYLE --- */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+        #MonitorCentral {
+            background: #080c10;
+            border-left: 1px solid #1a2535;
+            border-right: 1px solid #1a2535;
+        }
+
+        #MonitorHeader img { display: block; }
+
+        #MonitorSubTitulo {
+            background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%) !important;
+            color: #4a9eff !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 4px !important;
+            text-transform: uppercase !important;
+            padding: 5px 8px !important;
+            border-top: 1px solid #1e3a5f;
+            border-bottom: 1px solid #1e3a5f;
+        }
+
+        #TituloGraficas {
+            background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%) !important;
+            color: #4a9eff !important;
+            font-family: 'Rajdhani', sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 4px !important;
+            text-transform: uppercase !important;
+            padding: 5px 8px !important;
+            border-top: 1px solid #1e3a5f;
+            border-bottom: 1px solid #1e3a5f;
+            cursor: pointer;
+        }
+
+        #TituloGraficas:hover { color: #7dc4ff !important; }
+/* TABLAS */
+#MonitorEmpresasAcciones table,
+#MonitorEmpresasValores table {
+    font-size: 14px;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 748px;
+    font-family: 'Share Tech Mono', monospace;
+    table-layout: fixed;
+}
+
+        #MonitorEmpresasAcciones th,
+        #MonitorEmpresasValores th {
+            padding: 5px 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #0d1929, #162236, #0d1929);
+            border-top: 1px solid #1e3a5f;
+            border-bottom: 1px solid #1e3a5f;
+            text-align: left;
+        }
+
+        #MonitorEmpresasAcciones td,
+        #MonitorEmpresasValores td {
+            padding: 9px 8px;
+            color: #8ca0b8;
+            border-bottom: 1px solid #0f1e2e;
+        }
+
+        /* Columna Jugador: ancha para ~20 chars */
+        #MonitorEmpresasAcciones th:first-child,
+        #MonitorEmpresasValores th:first-child,
+        #MonitorEmpresasAcciones td:first-child,
+        #MonitorEmpresasValores td:first-child {
+            color: #c8d8e8;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+            width: 140px;
+        }
+
+        #MonitorEmpresasAcciones th:first-child,
+        #MonitorEmpresasValores th:first-child {
+            color: #4a9eff;
+            font-size: 11px;
+        }
+
+        /* Columna Total/Cartas: hasta 999,999,999 */
+        #MonitorEmpresasAcciones th:nth-child(2),
+        #MonitorEmpresasValores th:nth-child(2),
+        #MonitorEmpresasAcciones td:nth-child(2),
+        #MonitorEmpresasValores td:nth-child(2) {
+            width: 110px;
+        }
+
+        #MonitorEmpresasAcciones th:nth-child(2),
+        #MonitorEmpresasValores th:nth-child(2) { color: #ffc107; }
+        #MonitorEmpresasAcciones td:nth-child(2),
+        #MonitorEmpresasValores td:nth-child(2) {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        /* Columna Cash: hasta 999,999,999 */
+        #MonitorEmpresasAcciones th:nth-child(3),
+        #MonitorEmpresasValores th:nth-child(3),
+        #MonitorEmpresasAcciones td:nth-child(3),
+        #MonitorEmpresasValores td:nth-child(3) {
+            color: #4a9eff;
+            width: 110px;
+        }
+
+        /* Columnas empresas: ancho uniforme, total restante = 748-140-110-110 = 388 / 4 = 97px */
+        #MonitorEmpresasAcciones th:nth-child(4), #MonitorEmpresasValores th:nth-child(4),
+        #MonitorEmpresasAcciones td:nth-child(4), #MonitorEmpresasValores td:nth-child(4) { color: #28a745; width: 97px; }
+        #MonitorEmpresasAcciones th:nth-child(5), #MonitorEmpresasValores th:nth-child(5),
+        #MonitorEmpresasAcciones td:nth-child(5), #MonitorEmpresasValores td:nth-child(5) { color: #adb5bd; width: 97px; }
+        #MonitorEmpresasAcciones th:nth-child(6), #MonitorEmpresasValores th:nth-child(6),
+        #MonitorEmpresasAcciones td:nth-child(6), #MonitorEmpresasValores td:nth-child(6) { color: #dc3545; width: 97px; }
+        #MonitorEmpresasAcciones th:nth-child(7), #MonitorEmpresasValores th:nth-child(7),
+        #MonitorEmpresasAcciones td:nth-child(7), #MonitorEmpresasValores td:nth-child(7) { color: #ffc107; width: 97px; }
+
+        /* Filas alternas */
+        #MonitorEmpresasAcciones table tr:nth-child(odd),
+        #MonitorEmpresasValores table tr:nth-child(odd) {
+            background-color: rgba(255,255,255,0.02);
+        }
+        #MonitorEmpresasAcciones table tr:nth-child(even),
+        #MonitorEmpresasValores table tr:nth-child(even) {
+            background-color: rgba(0,0,0,0.2);
+        }
+/* Fila activa (turno actual) */
+#MonitorEmpresasAcciones tr[style*="border-color: red"] td,
+#MonitorEmpresasValores tr[style*="border-color: red"] td {
+    background: rgba(137,21,43,0.15) !important;
+    border-top: 3px solid #cc0000 !important;
+    border-bottom: 3px solid #cc0000 !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+#MonitorEmpresasAcciones tr[style*="border-color: red"] td:first-child,
+#MonitorEmpresasValores tr[style*="border-color: red"] td:first-child {
+    border-left: 3px solid #cc0000 !important;
+}
+#MonitorEmpresasAcciones tr[style*="border-color: red"] td:last-child,
+#MonitorEmpresasValores tr[style*="border-color: red"] td:last-child {
+    border-right: 3px solid #cc0000 !important;
+}
+
+        /* th-* clases para colores de columna en headers */
+
+        /* Indicadores de cartas */
+        .card-indicator {
+            display: inline-block;
+            width: 9px;
+            height: 13px;
+            border-radius: 2px;
+            margin: 1px;
+            transition: background 0.3s ease;
+        }
+
+        /* Canvas gráfica */
+        #popChart {
+            background: transparent !important;
+            display: block;
+        }
+
+        #MonitorGraficas {
+            background: #080c10;
+        }
+
+        /* --- 7. MODALES --- */
+        .modal-admin {
+            display: none; 
+            position: absolute;
+            z-index: 20000; 
+            top: 0; left: 0; 
+            width: 1440px;
+            height: 820px;
+            background: rgba(0, 0, 0, 0.9);
+            align-items: center; 
+            justify-content: center;
+        }
+
+        .modal-admin div, 
+        .modal-admin h2, 
+        .modal-admin p, 
+        .modal-admin span, 
+        .modal-admin label {
+            color: #333;
+        }
+
+        .modal-admin button {
+            color: white;
+            cursor: pointer;
+        }
+
+        .modal-admin > div {
+            margin: auto !important;
+            position: relative;
+        }
+
+        #BtnAbrirBackend { 
+            position: absolute; bottom: 15px; right: 15px; z-index: 999; 
+            padding: 5px 10px; background: #1a1a1a; color: #444; 
+            border: 1px solid #333; cursor: pointer; font-size: 10px; 
+        }
+
+        /* ============================================================
+           BWS ANIMACIONES — MODALES
+           ============================================================ */
+        @keyframes bws-modal-up {
+            0%   { transform: translateY(120%); opacity: 0; }
+            60%  { transform: translateY(-8px);  opacity: 1; }
+            80%  { transform: translateY(4px);   opacity: 1; }
+            100% { transform: translateY(0px);   opacity: 1; }
+        }
+        @keyframes bws-modal-down {
+            0%   { transform: translateY(-120%); opacity: 0; }
+            60%  { transform: translateY(8px);   opacity: 1; }
+            80%  { transform: translateY(-4px);  opacity: 1; }
+            100% { transform: translateY(0px);   opacity: 1; }
+        }
+        .bws-modal-up   { animation: bws-modal-up   0.55s cubic-bezier(0.22,1,0.36,1) both; }
+        .bws-modal-down { animation: bws-modal-down 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+
+        @keyframes bws-modal-center-down {
+            0%   { transform: translate(-50%, calc(-50% - 120px)); opacity: 0; }
+            60%  { transform: translate(-50%, calc(-50% + 8px));   opacity: 1; }
+            80%  { transform: translate(-50%, calc(-50% - 4px));   opacity: 1; }
+            100% { transform: translate(-50%, -50%);               opacity: 1; }
+        }
+        .bws-modal-center-down { animation: bws-modal-center-down 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+
+        /* SCROLL PERSONALIZADO — HISTORIAL */
+        #ContenidoHistorial::-webkit-scrollbar { width: 6px; }
+        #ContenidoHistorial::-webkit-scrollbar-track { background: #0a0a0a; border-radius: 4px; }
+        #ContenidoHistorial::-webkit-scrollbar-thumb { background: #7a5c00; border-radius: 4px; }
+        #ContenidoHistorial::-webkit-scrollbar-thumb:hover { background: #ffc107; }
+  </style>
+ </head>
+ <body>
+  <div id="ContenedorGeneral">
+   <!-- ==================== LOGO TABLERO ==================== -->
+   <div id="LogoTablero">
+    <div id="logo">
+     <img src="_imagenes/logo75.png" style="cursor:pointer; width:100%; display:block; height:auto;"/>
+    </div>
+    <div id="MonitorTituloCotizaciones" style="background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%); color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; padding: 5px 8px; border-top: 1px solid #1e3a5f; border-bottom: 1px solid #1e3a5f; text-align: center; margin-top: 0;">
+     COTIZACIONES
+    </div>
+    <div id="empresas_valor">
+     <div class="header-cotizaciones">
+      <img src="_imagenes/empresas_valor75.png" style="width:100%; display:block; height:auto;"/>
+     </div>
+     <div id="ContenedorEtiquetas">
+      <div class="item-cotizacion">
+       <span class="value" id="ValorHeineken">
+        1000
+       </span>
+      </div>
+      <div class="item-cotizacion">
+       <span class="value" id="ValorGatorade">
+        1000
+       </span>
+      </div>
+      <div class="item-cotizacion">
+       <span class="value" id="ValorNike">
+        1000
+       </span>
+      </div>
+      <div class="item-cotizacion">
+       <span class="value" id="ValorMcDonalds">
+        1000
+       </span>
+      </div>
+     </div>
+    </div>
+    <canvas id="canvasBarras" style="background-color: #060a0e; display:block; margin: 0 auto; width: 362px;">
+    </canvas>
+   </div>
+   <!-- ==================== MONITOR CENTRAL ==================== -->
+   <div id="MonitorCentral">
+    <div id="MonitorHeader">
+     <img src="_imagenes/MonitorHeader.png" style="margin-left: 2px;"/>
+    </div>
+    <!-- HEADER TABLA ACCIONES (dentro de la tabla) -->
+    <div id="MonitorTituloAcciones" style="background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%); color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; padding: 5px 8px; border-top: 1px solid #1e3a5f; border-bottom: 1px solid #1e3a5f; text-align: center; margin-top: 5px;">
+     MONITOR ACCIONARIO
+    </div>
+    <div id="MonitorEmpresasAcciones">
+     <table>
+      <thead>
+       <tr>
+        <th class="th-nombre">
+         JUGADOR
+        </th>
+        <th class="th-total">
+         TOTAL
+        </th>
+        <th class="th-cash">
+         CASH
+        </th>
+        <th class="th-h">
+         ▲ HNK
+        </th>
+        <th class="th-g">
+         ▲ GAT
+        </th>
+        <th class="th-n">
+         ▲ NKE
+        </th>
+        <th class="th-m">
+         ▲ MCD
+        </th>
+       </tr>
+      </thead>
+      <tr id="Jugador1_Linea">
+       <td id="Jugador1_Nombre">
+        —
+       </td>
+       <td id="Jugador1_Total">
+        .
+       </td>
+       <td id="Jugador1_Cash">
+        .
+       </td>
+       <td id="Jugador1_Heineken">
+        .
+       </td>
+       <td id="Jugador1_Gatorade">
+        .
+       </td>
+       <td id="Jugador1_Nike">
+        .
+       </td>
+       <td id="Jugador1_McDonalds">
+        .
+       </td>
+      </tr>
+      <tr id="Jugador2_Linea">
+       <td id="Jugador2_Nombre">
+        —
+       </td>
+       <td id="Jugador2_Total">
+        .
+       </td>
+       <td id="Jugador2_Cash">
+        .
+       </td>
+       <td id="Jugador2_Heineken">
+        .
+       </td>
+       <td id="Jugador2_Gatorade">
+        .
+       </td>
+       <td id="Jugador2_Nike">
+        .
+       </td>
+       <td id="Jugador2_McDonalds">
+        .
+       </td>
+      </tr>
+      <tr id="Jugador3_Linea">
+       <td id="Jugador3_Nombre">
+        —
+       </td>
+       <td id="Jugador3_Total">
+        .
+       </td>
+       <td id="Jugador3_Cash">
+        .
+       </td>
+       <td id="Jugador3_Heineken">
+        .
+       </td>
+       <td id="Jugador3_Gatorade">
+        .
+       </td>
+       <td id="Jugador3_Nike">
+        .
+       </td>
+       <td id="Jugador3_McDonalds">
+        .
+       </td>
+      </tr>
+      <tr id="Jugador4_Linea">
+       <td id="Jugador4_Nombre">
+        —
+       </td>
+       <td id="Jugador4_Total">
+        .
+       </td>
+       <td id="Jugador4_Cash">
+        .
+       </td>
+       <td id="Jugador4_Heineken">
+        .
+       </td>
+       <td id="Jugador4_Gatorade">
+        .
+       </td>
+       <td id="Jugador4_Nike">
+        .
+       </td>
+       <td id="Jugador4_McDonalds">
+        .
+       </td>
+      </tr>
+     </table>
+    </div>
+    <div id="MonitorSubTitulo">
+     VALOR ACCIONARIO
+    </div>
+    <!-- HEADER TABLA VALORES (dentro de la tabla) -->
+    <div id="MonitorEmpresasValores">
+     <table>
+      <thead>
+       <tr>
+        <th class="th-nombre">
+         JUGADOR
+        </th>
+        <th class="th-total">
+         CARTAS
+        </th>
+        <th class="th-cash">
+         CASH
+        </th>
+        <th class="th-h">
+         HNK $
+        </th>
+        <th class="th-g">
+         GAT $
+        </th>
+        <th class="th-n">
+         NKE $
+        </th>
+        <th class="th-m">
+         MCD $
+        </th>
+       </tr>
+      </thead>
+      <tbody>
+       <tr id="Jugador1_V_Linea">
+        <td id="Jugador1_V_Nombre">
+         —
+        </td>
+        <td id="Jugador1_V_Total">
+         <span class="card-indicator" id="J1_C1" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J1_C2" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J1_C3" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J1_C4" style="background:#89152b;">
+         </span>
+        </td>
+        <td id="Jugador1_V_Cash">
+         .
+        </td>
+        <td id="Jugador1_V_Heineken">
+         .
+        </td>
+        <td id="Jugador1_V_Gatorade">
+         .
+        </td>
+        <td id="Jugador1_V_Nike">
+         .
+        </td>
+        <td id="Jugador1_V_McDonalds">
+         .
+        </td>
+       </tr>
+       <tr id="Jugador2_V_Linea">
+        <td id="Jugador2_V_Nombre">
+         —
+        </td>
+        <td id="Jugador2_V_Total">
+         <span class="card-indicator" id="J2_C1" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J2_C2" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J2_C3" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J2_C4" style="background:#89152b;">
+         </span>
+        </td>
+        <td id="Jugador2_V_Cash">
+         .
+        </td>
+        <td id="Jugador2_V_Heineken">
+         .
+        </td>
+        <td id="Jugador2_V_Gatorade">
+         .
+        </td>
+        <td id="Jugador2_V_Nike">
+         .
+        </td>
+        <td id="Jugador2_V_McDonalds">
+         .
+        </td>
+       </tr>
+       <tr id="Jugador3_V_Linea">
+        <td id="Jugador3_V_Nombre">
+         —
+        </td>
+        <td id="Jugador3_V_Total">
+         <span class="card-indicator" id="J3_C1" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J3_C2" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J3_C3" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J3_C4" style="background:#89152b;">
+         </span>
+        </td>
+        <td id="Jugador3_V_Cash">
+         .
+        </td>
+        <td id="Jugador3_V_Heineken">
+         .
+        </td>
+        <td id="Jugador3_V_Gatorade">
+         .
+        </td>
+        <td id="Jugador3_V_Nike">
+         .
+        </td>
+        <td id="Jugador3_V_McDonalds">
+         .
+        </td>
+       </tr>
+       <tr id="Jugador4_V_Linea">
+        <td id="Jugador4_V_Nombre">
+         —
+        </td>
+        <td id="Jugador4_V_Total">
+         <span class="card-indicator" id="J4_C1" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J4_C2" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J4_C3" style="background:#89152b;">
+         </span>
+         <span class="card-indicator" id="J4_C4" style="background:#89152b;">
+         </span>
+        </td>
+        <td id="Jugador4_V_Cash">
+         .
+        </td>
+        <td id="Jugador4_V_Heineken">
+         .
+        </td>
+        <td id="Jugador4_V_Gatorade">
+         .
+        </td>
+        <td id="Jugador4_V_Nike">
+         .
+        </td>
+        <td id="Jugador4_V_McDonalds">
+         .
+        </td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+    <div id="MonitorGraficas">
+     <p id="TituloGraficas" onclick="cambiargraficaLinea()">
+      ESTADÍSTICAS DE EMPRESAS
+     </p>
+     <canvas height="306" id="popChart" style="margin-left: 0;" width="748">
+     </canvas>
+    </div>
+   </div>
+   <!-- ==================== MONITOR INTERACTIVO ==================== -->
+   <div id="MonitorInteractivo">
+    <p id="MInteractivoTituloInteractivo">
+     TRANSACCIONES
+    </p>
+    <!-- MODAL HISTORIAL DE TRANSACCIONES -->
+    <div id="ModalHistorial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
+        <div class="bws-modal-up" style="background:#000000; border:1px solid #7a5c00; border-radius:14px; padding:28px 32px; width:680px; max-width:90vw; height:60vh; display:flex; flex-direction:column; box-shadow: 0 0 40px rgba(255,193,7,0.1), inset 0 1px 0 rgba(255,193,7,0.06);">
+            <div style="width:600px; height:2px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin: 0 auto 16px auto; border-radius:2px;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #7a5c00; padding-bottom:12px;">
+                <div>
+                    <h2 style="color:#ffffff; font-size:22px; letter-spacing:3px; font-family:'Rajdhani',sans-serif; font-weight:500; margin:0; text-transform:uppercase; text-shadow: 0 0 16px rgba(255,255,255,0.15);">HISTORIAL DE TRANSACCIONES</h2>
+                    <p style="color:#ffc107; font-family:'Rajdhani',sans-serif; font-size:16px; letter-spacing:3px; margin-top:3px; opacity:0.4;">ÚLTIMAS OPERACIONES</p>
+                </div>
+                <button onclick="cerrarHistorial()" style="background:transparent; color:#ffc107; border:1px solid #7a5c00; border-radius:6px; padding:6px 16px; cursor:pointer; font-weight:700; font-size:11px; letter-spacing:2px; font-family:'Rajdhani',sans-serif; transition:all 0.2s;" onmouseover="this.style.borderColor='#ffc107'" onmouseout="this.style.borderColor='#7a5c00'">✕ CERRAR</button>
+            </div>
+            <div id="ContenidoHistorial" style="overflow-y:auto; flex:1; font-size:23px; color:#8ca0b8; font-family:'Share Tech Mono',monospace; line-height:1.8; padding-right:8px;"></div>
+            <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #7a5c00, transparent); margin: 12px auto 0 auto; border-radius:2px;"></div>
+        </div>
+    </div>
+    <!-- MODAL CARTA EN ESPERA -->
+    <!-- MODAL ESPERA TURNO -->
+    <div id="ModalEsperaTurno" style="display:none; position:absolute; top:10px; left:8px; width:258px; min-height:220px; z-index:100; background:linear-gradient(160deg, #080c10 0%, #0d1929 100%); border:1px solid #1e3a5f; border-radius:12px; flex-direction:column; align-items:center; justify-content:center; padding:18px 12px 25px 12px; box-shadow: 0 0 25px rgba(74,158,255,0.15), inset 0 1px 0 rgba(74,158,255,0.1);">
+     <!-- Línea superior decorativa -->
+     <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin-bottom:12px; border-radius:2px;">
+     </div>
+     <!-- Icono de espera -->
+     <div style="font-size:20px; margin-bottom:6px; opacity:0.7;">
+      ⏳
+     </div>
+     <!-- Label -->
+     <p style="color:#4a9eff; font-size:9px; letter-spacing:4px; text-transform:uppercase; margin-bottom:4px; font-family:'Rajdhani',sans-serif; font-weight:700; opacity:0.8;">
+      ESPERANDO AL JUGADOR
+     </p>
+     <!-- Nombre jugador -->
+     <p id="TextoTurnoNombre" style="color:#ffffff; font-weight:900; font-size:16px; margin-bottom:14px; text-align:center; letter-spacing:2px; font-family:'Rajdhani',sans-serif; text-shadow: 0 0 12px rgba(255,255,255,0.3);">
+      ...
+     </p>
+     <!-- Timer y botón -->
+     <div style="display:flex; align-items:center; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+       <p style="color:#4a9eff; font-size:8px; letter-spacing:3px; margin-bottom:4px; font-family:'Rajdhani',sans-serif; font-weight:700;">
+        TIEMPO
+       </p>
+       <p id="TemporizadorTurno" style="color:#4a9eff; font-family:'Share Tech Mono',monospace; font-size:26px; font-weight:bold; background:rgba(74,158,255,0.08); border:1px solid rgba(74,158,255,0.3); padding:4px 12px; border-radius:6px; letter-spacing:2px; text-shadow: 0 0 10px rgba(74,158,255,0.5);">
+        05:00
+       </p>
+      </div>
+      <button disabled="" id="BtnSaltearTurno" style="padding:10px 14px; background:#111820; color:#3a4a5a; border:1px solid #1e3a5f; border-radius:6px; font-weight:bold; cursor:not-allowed; font-size:11px; letter-spacing:1px; margin-top:14px; font-family:'Rajdhani',sans-serif; transition: all 0.2s;">
+       SALTEAR
+      </button>
+     </div>
+     <!-- Línea inferior decorativa -->
+     <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-top:14px; border-radius:2px;">
+     </div>
+    </div>
+    <!-- HEADER INTERACTIVO -->
+    <div id="MInteractivoHeader" style="width: 275px; margin-top: 0px;">
+     <p style="margin-left: 4px;">
+      TURNO:
+      <span id="TurnoJugador">
+       Sin comenzar
+      </span>
+     </p>
+     <img src="_imagenes/MInteractivoEmpresas.png"/>
+     <form onsubmit="return false;">
+      <p style="display:flex; justify-content:space-around; align-items:center; padding:2px 0; margin:0; background:none; border:none;">
+       <input id="H_Radio" name="SelectorRadio" onclick="calcularPorRadio('H')" style="accent-color:#28a745; cursor:pointer; margin:0;" type="radio"/>
+       <input id="G_Radio" name="SelectorRadio" onclick="calcularPorRadio('G')" style="accent-color:#adb5bd; cursor:pointer; margin:0;" type="radio"/>
+       <input id="N_Radio" name="SelectorRadio" onclick="calcularPorRadio('N')" style="accent-color:#dc3545; cursor:pointer; margin:0;" type="radio"/>
+       <input id="M_Radio" name="SelectorRadio" onclick="calcularPorRadio('M')" style="accent-color:#ffc107; cursor:pointer; margin:0;" type="radio"/>
+      </p>
+      <div id="fila-inputs" style="display:flex; gap:6px; padding:4px 8px 2px 8px;">
+       <div id="ComboBoxWrapper" style="flex:1; position:relative;">
+        <div id="ComboBoxSelected" onclick="toggleComboBox()">
+         Comprar ▾
+        </div>
+        <div id="ComboBoxOptions" style="display:none; position:absolute; top:28px; left:0; z-index:999; width:100%;">
+         <div onclick="seleccionarCombo('C','Comprar')">
+          Comprar
+         </div>
+         <div onclick="seleccionarCombo('V','Vender')">
+          Vender
+         </div>
+        </div>
+       </div>
+       <select id="ComboBox" style="display:none;">
+        <option value="C">
+         Comprar
+        </option>
+        <option value="V">
+         Vender
+        </option>
+       </select>
+       <input id="CantidadInput" style="flex:1;" type="text" value="Ingrese Valor"/>
+      </div>
+      <div id="fila-botones" style="display:flex; gap:6px; padding:2px 8px 4px 8px;">
+       <input id="Finalizar" onclick="finalizarJugada()" type="button" value="FINALIZAR"/>
+       <input id="Ejecutar" onclick="ejecutarMovimientosUser()" type="button" value="EJECUTAR"/>
+      </div>
+     </form>
+    </div>
+    <p id="MInteractivoTituloMaso">
+     Movimientos: Por empezar
+    </p>
+    <div id="MInteractivoMaso" style="display:flex; justify-content:center; gap:10px; padding:8px 6px; margin-left:0;">
+     <img id="CartaMaso" onclick="jugadaCartaDelMaso()" src="_imagenes/CartaEjemploAtras.png" style="cursor:pointer; border-radius:4px; border:1px solid #5b2d8e;"/>
+     <img id="CartaJugada" src="_imagenes/CartaEjemploAtras.png" style="border-radius:4px;"/>
+    </div>
+    <p id="MInteractivoTituloCartas_Texto">
+     CARTAS JUGADOR
+    </p>
+    <div id="MInteractivoCartas">
+     <img id="CartaMaso1" onclick="jugadaCartaDeLaMano(0)" src="_imagenes/CartaEjemploAtras.png" style="cursor:pointer; border-radius:4px; border:1px solid #5b2d8e; width:100%;"/>
+     <img id="CartaMaso2" onclick="jugadaCartaDeLaMano(1)" src="_imagenes/CartaEjemploAtras.png" style="cursor:pointer; border-radius:4px; border:1px solid #5b2d8e; width:100%;"/>
+     <img id="CartaMaso3" onclick="jugadaCartaDeLaMano(2)" src="_imagenes/CartaEjemploAtras.png" style="cursor:pointer; border-radius:4px; border:1px solid #5b2d8e; width:100%;"/>
+     <img id="CartaMaso4" onclick="jugadaCartaDeLaMano(3)" src="_imagenes/CartaEjemploAtras.png" style="cursor:pointer; border-radius:4px; border:1px solid #5b2d8e; width:100%;"/>
+     <div style="grid-column:1/-1; text-align:center; margin-top:4px;">
+      <button onclick="abrirHistorial()" style="background:#130a24; color:#7c4daa; border:1px solid #5b2d8e; border-radius:4px; padding:4px 14px; font-size:10px; letter-spacing:2px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:700;">
+       📋 HISTORIAL
+      </button>
+     </div>
+    </div>
+   </div>
+   <!-- ==================== MODAL BACKEND (CONFIG) ==================== -->
+   <div id="ModalBackend" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
+    <div class="bws-modal-up" style="background: #000000; border: 1px solid #1e3a5f; border-radius: 14px; padding: 32px 36px; width: 440px; text-align: center; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);">
+     <div style="width:260px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 20px auto; border-radius:2px;">
+     </div>
+     <div style="margin-bottom: 20px;">
+      <img alt="BWS Logo" src="_imagenes/logo75.png" style="width: 370px; height: auto; display: block; margin: 0 auto;"/>
+     </div>
+     <h2 style="color: #ffffff; margin-bottom: 4px; font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 16px rgba(255,255,255,0.2);">
+      BIENVENIDO A LA BWS
+     </h2>
+     <p style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; margin-bottom: 24px; opacity: 0.8;">
+      CONFIGURAR PARTIDA
+     </p>
+     <div style="width:100%; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-bottom:20px;">
+     </div>
+     <div style="width: 100%;">
+      <div style="display: flex; align-items: center; margin-bottom: 10px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
+       <svg fill="none" height="20" style="margin-right:10px; flex-shrink:0;" viewbox="0 0 24 24" width="20">
+        <circle cx="12" cy="8" fill="#ffc107" r="4">
+        </circle>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-linecap="round" stroke-width="2">
+        </path>
+       </svg>
+       <label style="font-weight: 700; color: #4a9eff; min-width: 80px; text-align: left; font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 2px;">
+        JUGADOR 1
+       </label>
+       <input id="altasJ1" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 13px; outline: none;" type="text" value="..."/>
+      </div>
+      <div style="display: flex; align-items: center; margin-bottom: 10px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
+       <svg fill="none" height="20" style="margin-right:10px; flex-shrink:0;" viewbox="0 0 24 24" width="20">
+        <circle cx="12" cy="8" fill="#ffc107" r="4">
+        </circle>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-linecap="round" stroke-width="2">
+        </path>
+       </svg>
+       <label style="font-weight: 700; color: #4a9eff; min-width: 80px; text-align: left; font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 2px;">
+        JUGADOR 2
+       </label>
+       <input id="altasJ2" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 13px; outline: none;" type="text" value="..."/>
+      </div>
+      <div style="display: flex; align-items: center; margin-bottom: 10px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
+       <svg fill="none" height="20" style="margin-right:10px; flex-shrink:0;" viewbox="0 0 24 24" width="20">
+        <circle cx="12" cy="8" fill="#ffc107" r="4">
+        </circle>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-linecap="round" stroke-width="2">
+        </path>
+       </svg>
+       <label style="font-weight: 700; color: #4a9eff; min-width: 80px; text-align: left; font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 2px;">
+        JUGADOR 3
+       </label>
+       <input id="altasJ3" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 13px; outline: none;" type="text" value="..."/>
+      </div>
+      <div style="display: flex; align-items: center; margin-bottom: 20px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
+       <svg fill="none" height="20" style="margin-right:10px; flex-shrink:0;" viewbox="0 0 24 24" width="20">
+        <circle cx="12" cy="8" fill="#ffc107" r="4">
+        </circle>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-linecap="round" stroke-width="2">
+        </path>
+       </svg>
+       <label style="font-weight: 700; color: #4a9eff; min-width: 80px; text-align: left; font-family: 'Rajdhani', sans-serif; font-size: 12px; letter-spacing: 2px;">
+        JUGADOR 4
+       </label>
+       <input id="altasJ4" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 13px; outline: none;" type="text" value="..."/>
+      </div>
+     </div>
+     <input onclick="asignacionInicialJugadores();" style="width: 100%; padding: 12px; background: #89152b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: 'Rajdhani', sans-serif; font-size: 14px; letter-spacing: 2px;" type="button" value="ESTABLECER JUGADORES"/>
+     <div style="width:140px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 16px auto 0 auto; border-radius:2px;">
+     </div>
+    </div>
+   </div>
+   <!-- ==================== MODAL COMPLETAR JUGADA ==================== -->
+   <!-- ==================== MODAL ADVERTENCIA FINALIZAR ==================== -->
+   <div id="ModalAdvertenciaFinalizar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
+    <div class="bws-modal-up" style="background:#000000; border:1px solid #89152b; border-radius:14px; padding:32px 36px; width:420px; text-align:center; box-shadow: 0 0 40px rgba(137,21,43,0.2), inset 0 1px 0 rgba(137,21,43,0.08);">
+     <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #89152b, transparent); margin: 0 auto 20px auto; border-radius:2px;">
+     </div>
+     <div style="margin-bottom:16px;">
+      <svg fill="none" height="36" viewbox="0 0 24 24" width="36" xmlns="http://www.w3.org/2000/svg">
+       <path d="M12 3L2 21h20L12 3z" stroke="#ffc107" stroke-linejoin="round" stroke-width="1.5">
+       </path>
+       <path d="M12 9v5" stroke="#ffc107" stroke-linecap="round" stroke-width="1.5">
+       </path>
+       <circle cx="12" cy="17" fill="#ffc107" r="0.5" stroke="#ffc107" stroke-width="1.5">
+       </circle>
+      </svg>
+     </div>
+     <h2 style="color:#ffffff; font-size:20px; letter-spacing:3px; font-family:'Rajdhani',sans-serif; font-weight:900; margin-bottom:6px; text-transform:uppercase; text-shadow: 0 0 16px rgba(255,255,255,0.15);">
+      ATENCIÓN
+     </h2>
+     <p style="color:#4a9eff; font-family:'Rajdhani',sans-serif; font-size:11px; letter-spacing:3px; margin-bottom:20px; opacity:0.8;">
+      CONFIRMACIÓN REQUERIDA
+     </p>
+     <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #89152b, transparent); margin-bottom:20px;">
+     </div>
+     <p id="TextoAdvertenciaFinalizar" style="color:#8ca0b8; font-size:16px; font-family:'Rajdhani',sans-serif; font-weight:600; line-height:1.7; margin-bottom:28px; letter-spacing:1px;">
+      Todavía tenés efectivo disponible
+      <br/>
+      para comprar acciones.
+      <br/>
+      ¿Deseas finalizar igual?
+     </p>
+     <div style="display:flex; justify-content:center; gap:16px;">
+      <button onclick="confirmarFinalizar()" onmouseout="this.style.background='#89152b'" onmouseover="this.style.background='#a01830'" style="background:#89152b; color:white; border:1px solid #89152b; border-radius:8px; padding:10px 28px; cursor:pointer; font-weight:700; font-size:16px; letter-spacing:2px; font-family:'Rajdhani',sans-serif; transition:all 0.2s;">
+       SÍ, FINALIZAR
+      </button>
+      <button onclick="document.getElementById('ModalAdvertenciaFinalizar').style.display='none'" onmouseout="this.style.borderColor='#1e3a5f'" onmouseover="this.style.borderColor='#4a9eff'" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:8px; padding:10px 28px; cursor:pointer; font-weight:700; font-size:16px; letter-spacing:2px; font-family:'Rajdhani',sans-serif; transition:all 0.2s;">
+       NO, VOLVER
+      </button>
+     </div>
+     <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #89152b, transparent); margin: 20px auto 0 auto; border-radius:2px;">
+     </div>
+    </div>
+   </div>
+   <!-- ==================== MODAL ESPERA ==================== -->
+   <div id="ModalEspera" style="display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
+    <div class="bws-modal-down" style="background: #000000; border: 1px solid #1e3a5f; border-radius: 14px; padding: 32px 36px; width: 520px; text-align: center; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);">
+     <div style="width:260px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 20px auto; border-radius:2px;">
+     </div>
+     <div style="margin-bottom: 20px;">
+      <img alt="BWS Logo" src="_imagenes/logo75.png" style="width: 320px; height: auto; display: block; margin: 0 auto;"/>
+     </div>
+     <h2 style="color: #ffffff; margin-bottom: 4px; font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 16px rgba(255,255,255,0.2);">
+      ¡BIENVENIDOS A LA BWS!
+     </h2>
+     <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 16px 0;">
+     </div>
+     <p style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px; line-height: 1.8; margin-bottom: 24px; white-space: nowrap;">
+      OTRO JUGADOR ESTÁ ASIGNADO A CREAR LA PARTIDA.
+      <br/>
+      POR FAVOR ESPERE LA INICIALIZACIÓN DEL JUEGO.
+     </p>
+     <div style="display: flex; justify-content: center; align-items: center; gap: 12px;">
+      <div style="width: 24px; height: 24px; border: 2px solid #1e3a5f; border-top: 2px solid #4a9eff; border-radius: 50%; animation: spin 1s linear infinite;">
+      </div>
+      <span style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; opacity: 0.8; white-space: nowrap;">
+       AGUARDANDO...
+      </span>
+     </div>
+     <div style="width:200px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 20px auto 0 auto; border-radius:2px;">
+     </div>
+    </div>
+    <style>
+     @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+   </div>
+   <!-- ==================== MODAL SELECCION NOMBRE ==================== -->
+   <div id="ModalSeleccionNombre" style="display: none; position: absolute; z-index: 9999; left: 0; top: 0; width: 1440px; height: 820px; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
+    <div class="bws-modal-up" style="background: #000000; border: 1px solid #1e3a5f; border-radius: 14px; padding: 32px 36px; width: 440px; text-align: center; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08); margin: auto; position: relative;">
+     <div style="width:260px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 20px auto; border-radius:2px;">
+     </div>
+     <div style="margin-bottom: 20px;">
+      <img alt="BWS Logo" src="_imagenes/logo75.png" style="width: 320px; height: auto; display: block; margin: 0 auto;"/>
+     </div>
+     <h2 style="color: #ffffff; margin-bottom: 4px; font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 16px rgba(255,255,255,0.2);">
+      LA PARTIDA YA ESTÁ ACTIVA
+     </h2>
+     <p style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; margin-bottom: 24px; opacity: 0.8;">
+      SELECCIONÁ TU PLAZA
+     </p>
+     <div style="width:100%; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-bottom:20px;">
+     </div>
+     <div id="ContenedorBotonesSeleccion" style="display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center;">
+     </div>
+     <div id="MensajeEsperaSeleccion" style="display: none; margin-top: 24px; color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; padding-top: 16px; border-top: 1px solid #1e3a5f; width: 100%;">
+      <span style="display: inline-block; animation: pulse 1.5s infinite; margin-right: 10px;">
+       ⌛
+      </span>
+      ESPERANDO A LOS DEMÁS...
+     </div>
+     <div style="width:140px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 20px auto 0 auto; border-radius:2px;">
+     </div>
+    </div>
+   </div>
+   <!-- ==================== MODAL COMPLETAR JUGADA ==================== -->
+   <div id="ModalCartas" style="display: none; position: fixed; z-index: 1000; left: 0; top: 40; width: 100%; height: 100%; background-color: transparent; align-items: center; justify-content: center;">
+    <div id="ModalCajaInterior" style="position: absolute; background: #000000; padding: 24px 30px 28px 30px; border: 1px solid #1e3a5f; border-radius: 14px; width: 450px; text-align: center; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);">
+     <div style="width:120px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 14px auto; border-radius:2px;">
+     </div>
+     <h1 id="ModalHeader" style="cursor: move; font-size:32px; color:#ffffff; font-family:'Rajdhani',sans-serif; font-weight:400; letter-spacing:4px; text-transform:uppercase; margin-bottom:14px; text-shadow: 0 0 16px rgba(255,255,255,0.25);">
+      CARTA JUGADA
+     </h1>
+     <div style="position:relative; display:inline-block; margin-bottom:16px;">
+      <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:156px; height:208px; background:radial-gradient(ellipse at center, rgba(74,158,255,0.12) 0%, transparent 70%); border-radius:50%; pointer-events:none;">
+      </div>
+      <img id="ModalCartaImagen" src="" style="position:relative; width:117px; border-radius:6px; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);"/>
+     </div>
+     <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-bottom:14px;">
+     </div>
+     <p id="ModalTituloTexto" style="font-weight:400; color:#8ca0b8; font-family:Arial, sans-serif; font-size:16px; letter-spacing:1px; margin:10px 0;">
+     </p>
+     <div id="ModalImagenesOpciones" style="display: flex; justify-content: space-around; margin-bottom:10px;">
+     </div>
+     <form id="ModalFormulario" style="display: flex; justify-content: space-around; margin-top: 6px;">
+     </form>
+     <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 14px auto 0 auto; border-radius:2px;">
+     </div>
+    </div>
+   </div>
+   <!-- ==================== MODAL CARTA EN ESPERA ==================== -->
+   <div id="ModalCartaEspera" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:998; background:rgba(0,0,0,0); justify-content:center; align-items:center;">
+    <div id="ModalCartaEsperaInterior" style="background:#000000; border:1px solid #1e3a5f; border-radius:14px; padding:24px 30px 28px 30px; text-align:center; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);">
+     <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 14px auto; border-radius:2px;">
+     </div>
+     <h1 style="font-size:32px; color:#ffffff; font-family:'Rajdhani',sans-serif; font-weight:400; letter-spacing:4px; text-transform:uppercase; margin-bottom:14px; text-shadow: 0 0 16px rgba(255,255,255,0.25);">
+      CARTA JUGADA
+     </h1>
+     <div style="position:relative; display:inline-block; margin-bottom:16px;">
+      <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:156px; height:208px; background:radial-gradient(ellipse at center, rgba(74,158,255,0.12) 0%, transparent 70%); border-radius:50%; pointer-events:none;">
+      </div>
+      <img id="ImagenCartaEspera" src="" style="position:relative; width:117px; border-radius:6px; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);"/>
+     </div>
+     <div style="margin-top:4px;">
+      <button onclick="document.getElementById('ModalCartaEspera').style.display='none'" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:6px; padding:4px 16px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:11px; letter-spacing:2px;">
+       ✕ CERRAR
+      </button>
+     </div>
+     <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 12px auto 0 auto; border-radius:2px;">
+     </div>
+    </div>
+   </div>
+  </div>
+  <!-- fin ContenedorGeneral -->
+  <script src="/socket.io/socket.io.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js">
+  </script>
+  <script src="_js/bws.js">
+  </script>
+  <script type="text/javascript">
+   function redimensionarJuego() {
+            const contenedor = document.getElementById('ContenedorGeneral');
+            const escalaX = window.innerWidth / 1440;
+            const escalaY = window.innerHeight / 820;
+            const escalaFinal = Math.min(escalaX, escalaY) * 0.98;
+            contenedor.style.transform = `translate(-50%, -50%) scale(${escalaFinal})`;
+        }
+        window.addEventListener('resize', redimensionarJuego);
+        window.addEventListener('load', redimensionarJuego);
+        redimensionarJuego();
+  </script>
+ </body>
+</html>
