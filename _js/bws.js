@@ -204,9 +204,21 @@ socket.on('connect', () => {
 // --- LOGICA DE ROLES INICIALES ---
 
 socket.on('rolInicial', (data) => {
-    console.log("Rol asignado: " + data.rol);
+    console.log("Servidor asignó rol: " + data.rol);
     window._rolRecibido = data.rol;
-    // Los modales se mostrarán después de que la interfaz esté cargada
+
+    const modalBackend = document.getElementById('ModalBackend');
+    const modalEspera = document.getElementById('ModalEspera');
+
+    if (data.rol === 'host') {
+        if (modalEspera) modalEspera.style.display = 'none';
+        if (modalBackend) modalBackend.style.display = 'flex';
+        console.log("Eres el Host. Configura la partida.");
+    } else if (data.rol === 'espera') {
+        if (modalBackend) modalBackend.style.display = 'none';
+        if (modalEspera) modalEspera.style.display = 'flex';
+        console.log("Esperando a que el Host inicie la partida...");
+    }
 });
 
 // --- LOGICA DE LIBERACIÓN (Para usuarios en espera ) ---
