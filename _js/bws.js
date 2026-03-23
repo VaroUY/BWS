@@ -77,6 +77,54 @@ var _graficaLineaEmpresasCanvas = document.getElementById("popChart");
 var _queGraficaVa = "A";
 
 // ============================================================
+// NUEVAS FUNCIONES DE PRELOADER Y PRECARGA
+// ============================================================
+function actualizarPreloader(mensaje, progreso) {
+    const texto = document.getElementById('preloaderText');
+    const barra = document.getElementById('preloaderBar');
+    if (texto) texto.innerText = mensaje;
+    if (barra && progreso !== undefined) {
+        barra.style.width = progreso + '%';
+    }
+}
+
+function ocultarPreloader() {
+    const preloader = document.getElementById('preloader');
+    const contenedor = document.getElementById('ContenedorGeneral');
+    if (preloader) preloader.style.display = 'none';
+    if (contenedor) {
+        contenedor.style.display = 'block';
+        redimensionarJuego();
+    }
+}
+
+function precargarImagenesDeCartas(mazo, callback) {
+    if (!mazo || mazo.length === 0) {
+        if (callback) callback();
+        return;
+    }
+    const total = mazo.length;
+    let cargadas = 0;
+    actualizarPreloader(`Cargando cartas (0/${total})`, 0);
+    mazo.forEach(carta => {
+        const img = new Image();
+        img.onload = () => {
+            cargadas++;
+            const porcentaje = (cargadas / total) * 100;
+            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
+            if (cargadas === total && callback) callback();
+        };
+        img.onerror = () => {
+            cargadas++;
+            const porcentaje = (cargadas / total) * 100;
+            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
+            if (cargadas === total && callback) callback();
+        };
+        img.src = carta[2];
+    });
+}
+
+// ============================================================
 // BWS ANIMACIONES — animarCotizacion
 // Actualiza el valor de cotización con:
 //   · Counter animado (rueda de viejo a nuevo en ~600ms)
@@ -150,34 +198,15 @@ function setCotizacion(idElemento, nuevoValor) {
 
 // Esto es para que tú veas en TU navegador que conectó
 socket.on('connect', () => {
-    console.log("¡Conectado al servidor! Mi ID es: " + socket.id);
+    console.log("Conectado al servidor");
+    actualizarPreloader("Conectado al servidor", 20);
 });
-
 // --- LOGICA DE ROLES INICIALES ---
 
 socket.on('rolInicial', (data) => {
-    console.log("Servidor asignó rol: " + data.rol);
-
-    // 1. Referencias a los elementos del DOM
-    const modalBackend = document.getElementById('ModalBackend');
-    const modalEspera = document.getElementById('ModalEspera');
-
-    if (data.rol === 'host') {
-        // SI SOY EL PRIMERO:
-        // Oculto el de espera (por si estaba abierto) y abro el configurador
-        if (modalEspera) modalEspera.style.display = 'none';
-        if (modalBackend) modalBackend.style.display = 'flex';
-        
-        console.log("Eres el Host. Por favor configura la partida.");
-
-    } else if (data.rol === 'espera') {
-        // SI SOY UN INVITADO:
-        // Oculto el configurador (para que no hagan trampa) y bloqueo con Espera
-        if (modalBackend) modalBackend.style.display = 'none';
-        if (modalEspera) modalEspera.style.display = 'flex';
-
-        console.log("Esperando a que el Host inicie la partida...");
-    }
+    console.log("Rol asignado: " + data.rol);
+    window._rolRecibido = data.rol;
+    // Los modales se mostrarán después de que la interfaz esté cargada
 });
 
 // --- LOGICA DE LIBERACIÓN (Para usuarios en espera ) ---
@@ -306,28 +335,22 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
         return;
     }
     _partidaYaInicializada = true;
-    // 1. Ocultamos el modal de selección
     document.getElementById('ModalSeleccionNombre').style.display = 'none';
-    // 2. Identificamos quién soy yo en esta partida
     let miPosicionEnArray = estadoRecibido.jugadores.findIndex(j => j.socketId === socket.id);
-    miAsientoLocal = miPosicionEnArray + 1; 
-    // 3. Sincronización de variables de turno para todos los jugadores
-    _jugadorSeleccionado = 1; 
+    miAsientoLocal = miPosicionEnArray + 1;
+    _jugadorSeleccionado = 1;
     _turnoJugador = 0;
-    // 4. Calculamos el índice inicial del mazo según jugadores activos
     const jugadoresActivos = estadoRecibido.jugadores.filter(j => j.nombre !== "Sin Asignar").length;
     _valorIndice = jugadoresActivos * 4;
     console.log("Confirmado: Soy el Jugador " + miAsientoLocal + " — Mazo empieza en índice: " + _valorIndice);
 
-    // Guardar mazo localmente
     if (estadoRecibido.masoCartas) {
         cartasMaestro = estadoRecibido.masoCartas;
     }
 
-    //--- ** DEEPSEEK: Precargar imágenes antes de mostrar interfaz
+    // Precargar imágenes y luego mostrar la interfaz
     precargarImagenesDeCartas(cartasMaestro, () => {
-        // 5. INICIALIZACIÓN VISUAL (Llenado de datos y array local)
-
+        // Inicializar visualmente todo (igual que antes)
         estadoRecibido.jugadores.forEach((jugServ, index) => {
             let num = index + 1;
             if (jugServ.nombre !== "Sin Asignar") {
@@ -349,22 +372,25 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
                 document.getElementById("Jugador" + num + "_McDonalds").innerHTML = "";
             }
         });
-        // 6. Configuración del monitor central
-        const nombreEnTurno = _jugadores[0][0]; 
-        document.getElementById('TurnoJugador').innerHTML = nombreEnTurno;
+        document.getElementById('TurnoJugador').innerHTML = _jugadores[0][0];
         document.getElementById('MInteractivoTituloMaso').innerHTML = "Movimientos : " + _valorIndice + "/68";
-        // 7. Gestión de Bloqueo
         gestionarBloqueoPantalla(1, estadoRecibido.jugadores);
-        // Bordes rojos iniciales para el J1
         document.getElementById("Jugador1_Linea").style = "border-style: solid; border-color: red; border-width: 2px;";
         document.getElementById("Jugador1_V_Linea").style = "border-style: solid; border-color: red; border-width: 2px;";
-        // 8. RENDERIZADO DEL JUEGO
         dibujoGraficaBarras(_valorHeineken, _valorGatorade, _valorNike, _valorMcDonalds);
-        grafcaLineal(); 
+        grafcaLineal();
         mostrarCartasJugador();
-        // 9. Temporizador
         iniciarTimerTurno();
-        console.log("Tablero listo. Turno inicial de: " + nombreEnTurno);
+
+        // Ocultar preloader y mostrar el juego
+        ocultarPreloader();
+
+        // Mostrar el modal correspondiente según el rol guardado
+        if (window._rolRecibido === 'host') {
+            document.getElementById('ModalBackend').style.display = 'flex';
+        } else if (window._rolRecibido === 'espera') {
+            document.getElementById('ModalEspera').style.display = 'flex';
+        }
     });
 });
 
@@ -437,7 +463,16 @@ socket.on('reconectarJugador', (data) => {
         mostrarCartasJugador();
         actualizarIndicadoresCartas();
         iniciarTimerTurno();
+
+        ocultarPreloader();
+
+        if (window._rolRecibido === 'host') {
+            document.getElementById('ModalBackend').style.display = 'flex';
+        } else if (window._rolRecibido === 'espera') {
+            document.getElementById('ModalEspera').style.display = 'flex';
+        }
         console.log("Reconexión completada. Turno actual: " + turnoActual);
+
     });
 });
 // --------------------------------- manejo de turnos en el socket ------------------------
