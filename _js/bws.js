@@ -349,6 +349,10 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
         return;
     }
     _partidaYaInicializada = true;
+
+    // Cerrar modal de votación si estaba abierto
+    cerrarModalVotacion();
+
     document.getElementById('ModalSeleccionNombre').style.display = 'none';
     let miPosicionEnArray = estadoRecibido.jugadores.findIndex(j => j.socketId === socket.id);
     miAsientoLocal = miPosicionEnArray + 1;
@@ -409,7 +413,10 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
         // Ocultar preloader y mostrar el juego
         ocultarPreloader();
 
-        // Mostrar el modal correspondiente según el rol guardado
+        // Asegurar que el bloqueo de turno se aplique después de que todas las cartas se hayan mostrado
+        gestionarBloqueoPantalla(1, estadoRecibido.jugadores);
+
+        // Mostrar el modal correspondiente según el rol guardado (comentado)
 //        if (window._rolRecibido === 'host') {
 //            document.getElementById('ModalBackend').style.display = 'flex';
 //        } else if (window._rolRecibido === 'espera') {
@@ -670,8 +677,12 @@ socket.on('cerrarCartaEspera', () => {
 // ============================================================
 // EVENTO: VOTACIÓN DE CARTAS INICIALES
 // ============================================================
+// ============================================================
+// EVENTO: VOTACIÓN DE CARTAS INICIALES
+// ============================================================
 let temporizadorVotacion = null;
 let modalVotacion = null;
+let votoEnviado = false;  // Nuevo: evitar múltiples votos
 
 function crearModalVotacion() {
     if (document.getElementById('ModalVotacionCartas')) return;
@@ -691,6 +702,7 @@ function crearModalVotacion() {
                 <button id="votarCambiar" style="background: #dc3545; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-weight: bold; cursor: pointer;">ESTOY PARA CAMBIAR</button>
             </div>
             <p id="tiempoRestanteVotacion" style="color: #8ca0b8; font-family: 'Share Tech Mono', monospace; font-size: 14px; margin-top: 12px;">Tiempo restante: 02:00</p>
+            <div id="mensajeEsperaVotacion" style="display: none; color: #a855f7; font-size: 12px; margin-top: 12px;">Esperando a los demás jugadores...</div>
             <div style="width:100px; height:1px; background:linear-gradient(90deg, transparent, #5b2d8e, transparent); margin: 16px auto 0 auto;"></div>
         </div>
     `;
@@ -700,9 +712,14 @@ function crearModalVotacion() {
 
 socket.on('solicitarOpcionCartas', (data) => {
     console.log("Recibida solicitud de votación de cartas", data);
-    const { cartas, tiempoLimite } = data; // cartas es array de [tipo, empresa, imagenUrl]
+    const { cartas, tiempoLimite } = data;
+
+    // Ocultar el selector de asientos si está visible
+    const modalAsientos = document.getElementById('ModalSeleccionNombre');
+    if (modalAsientos) modalAsientos.style.display = 'none';
 
     crearModalVotacion();
+    votoEnviado = false;  // Reiniciar estado
 
     const contenedorCartas = document.getElementById('cartasVotacion');
     contenedorCartas.innerHTML = '';
@@ -721,9 +738,8 @@ socket.on('solicitarOpcionCartas', (data) => {
     temporizadorVotacion = setInterval(() => {
         if (tiempoRestante <= 0) {
             clearInterval(temporizadorVotacion);
-            if (modalVotacion && modalVotacion.style.display === 'flex') {
+            if (modalVotacion && modalVotacion.style.display === 'flex' && !votoEnviado) {
                 enviarVoto(2); // 2 = todo puede pasar
-                cerrarModalVotacion();
             }
         } else {
             const minutos = Math.floor(tiempoRestante / 60);
@@ -735,9 +751,31 @@ socket.on('solicitarOpcionCartas', (data) => {
 
     modalVotacion.style.display = 'flex';
 
-    document.getElementById('votarQuedo').onclick = () => { enviarVoto(1); cerrarModalVotacion(); };
-    document.getElementById('votarTodoPasa').onclick = () => { enviarVoto(2); cerrarModalVotacion(); };
-    document.getElementById('votarCambiar').onclick = () => { enviarVoto(3); cerrarModalVotacion(); };
+    const btnQuedo = document.getElementById('votarQuedo');
+    const btnTodoPasa = document.getElementById('votarTodoPasa');
+    const btnCambiar = document.getElementById('votarCambiar');
+
+    // Función para manejar el voto
+    const manejarVoto = (opcion) => {
+        if (votoEnviado) return;
+        votoEnviado = true;
+        // Deshabilitar botones
+        btnQuedo.disabled = true;
+        btnTodoPasa.disabled = true;
+        btnCambiar.disabled = true;
+        btnQuedo.style.opacity = '0.5';
+        btnTodoPasa.style.opacity = '0.5';
+        btnCambiar.style.opacity = '0.5';
+        // Mostrar mensaje de espera
+        const mensaje = document.getElementById('mensajeEsperaVotacion');
+        if (mensaje) mensaje.style.display = 'block';
+        // Enviar voto
+        enviarVoto(opcion);
+    };
+
+    btnQuedo.onclick = () => manejarVoto(1);
+    btnTodoPasa.onclick = () => manejarVoto(2);
+    btnCambiar.onclick = () => manejarVoto(3);
 });
 
 function enviarVoto(opcion) {
@@ -753,6 +791,8 @@ function enviarVoto(opcion) {
 function cerrarModalVotacion() {
     if (modalVotacion) modalVotacion.style.display = 'none';
     if (temporizadorVotacion) clearInterval(temporizadorVotacion);
+    // Limpiar variables
+    votoEnviado = false;
 }
 
 // ---------------------------- FUNCIÓN PARA ENVIAR DATOS AL SERVIDOR -----------------------------------//
@@ -2372,12 +2412,11 @@ function mostrarCartasJugador() {
 
     // Si tenemos cartas predefinidas por el servidor, usarlas directamente
     if (window._misCartasURLs && window._misCartasURLs.length === 4) {
+        console.log("Mostrando cartas desde _misCartasURLs:", window._misCartasURLs);
         for (var i = 0; i < 4; i++) {
-            if (_jugadores[_miIndice][i+1]) {
-                document.getElementById('CartaMaso'+String(i+1)).src = window._misCartasURLs[i];
-            } else {
-                document.getElementById('CartaMaso'+String(i+1)).src = "_imagenes/CartaEjemploAtras.png";
-            }
+            // Asegurar que el flag de la carta esté en true (por si acaso)
+            _jugadores[_miIndice][i+1] = true;
+            document.getElementById('CartaMaso'+String(i+1)).src = window._misCartasURLs[i];
         }
         document.getElementById("CartaMaso1").disabled = false;
         document.getElementById("CartaMaso2").disabled = false;
@@ -2387,6 +2426,7 @@ function mostrarCartasJugador() {
     }
 
     // Si no hay cartas predefinidas, usar la lógica original basada en índice fijo
+    console.log("Usando lógica original para mostrar cartas");
     if (_miIndice == 1){
         _auxJ = _auxJ + 3;
     } else if (_miIndice == 2){
