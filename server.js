@@ -167,59 +167,6 @@ let estadoJuego = {
 // ---------------------------------- FUNCIONES DEL SERVIDOR ------------------------- //
 // ----------------------------------------------------------------------------------- //
 
-// Función para iniciar la fase de votación de cartas iniciales
-function iniciarFaseVotacion() {
-    console.log("Iniciando fase de votación de cartas...");
-    
-    // Reiniciamos el estado de votación
-    estadoJuego.votacion = {
-        activa: true,
-        opciones: [null, null, null, null],
-        timeoutId: null
-    };
-    
-    // Repartir las primeras 4 cartas a cada jugador (basado en las primeras 16 del mazo)
-    // Las cartas no se asignan en el estado del servidor, sino que se envían a cada cliente individualmente.
-    // Para esto, necesitamos enviar a cada jugador su array de 4 cartas.
-    // Como cada jugador tiene su socketId en estadoJuego.jugadores, podemos enviarle privadamente.
-    
-    // Primero, calculamos las posiciones de las cartas para cada jugador
-    // Índice base para jugador i: i * 4 (porque 4 cartas por jugador)
-    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
-    
-    jugadoresActivos.forEach((jugador, idx) => {
-        const indiceReal = estadoJuego.jugadores.findIndex(j => j.socketId === jugador.socketId);
-        if (indiceReal !== -1) {
-            const cartasJugador = [];
-            for (let c = 0; c < 4; c++) {
-                const cartaIndex = indiceReal * 4 + c;
-                if (estadoJuego.masoCartas[cartaIndex]) {
-                    cartasJugador.push(estadoJuego.masoCartas[cartaIndex]);
-                }
-            }
-            // Enviar a ese jugador específico sus cartas para votación
-            io.to(jugador.socketId).emit('solicitarVotacionCartas', {
-                cartas: cartasJugador,
-                tiempoLimite: 120 // 2 minutos en segundos
-            });
-        }
-    });
-    
-    // Configurar timeout de 2 minutos para la votación
-    estadoJuego.votacion.timeoutId = setTimeout(() => {
-        console.log("Tiempo de votación agotado. Resolviendo votos faltantes...");
-        // Asignar opción por defecto (2 = "todo pasa") a quienes no votaron
-        const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
-        jugadoresActivos.forEach((jugador, idx) => {
-            const indiceReal = estadoJuego.jugadores.findIndex(j => j.socketId === jugador.socketId);
-            if (indiceReal !== -1 && estadoJuego.votacion.opciones[indiceReal] === null) {
-                estadoJuego.votacion.opciones[indiceReal] = 2; // "todo pasa"
-                console.log(`Jugador ${jugador.nombre} no votó, se asigna "todo pasa".`);
-            }
-        });
-        resolverVotacion();
-    }, 120 * 1000); // 2 minutos
-}
 
 // Función para iniciar la fase de votación de cartas iniciales
 function iniciarFaseVotacion() {
@@ -238,22 +185,11 @@ function iniciarFaseVotacion() {
     });
 
     // 3. Tomar las primeras 16 cartas del mazo (asignadas a cada jugador según su orden)
-    //    Nota: en tu lógica original, las cartas de mano se asignan con índices fijos basados en el asiento.
-    //    Por simplicidad, enviaremos a cada jugador sus 4 cartas según la posición en el mazo.
-    //    La función `mostrarCartasJugador` en el cliente usa cartasMaestro y los índices calculados en base a miAsientoLocal.
-    //    Para que el cliente muestre las cartas correctas, debemos enviarle las URLs de sus cartas.
-    //    Guardamos las cartas en estadoJuego.jugadores para que luego se puedan mostrar.
-
-    // Calcular las primeras 16 posiciones del mazo (índices 0 a 15)
     const cartasIniciales = estadoJuego.masoCartas.slice(0, 16);
-    // Distribuir a los jugadores: cada jugador recibe 4 cartas consecutivas según orden de índice
     for (let i = 0; i < indicesActivos.length; i++) {
         const jugadorIdx = indicesActivos[i];
         const offset = i * 4;
-        // Asignamos las cartas en el array _jugadores del cliente más adelante,
-        // pero aquí solo necesitamos enviarlas.
         const cartasDelJugador = cartasIniciales.slice(offset, offset + 4);
-        // Guardamos temporalmente en el objeto jugador (opcional)
         estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasDelJugador;
     }
 
@@ -270,15 +206,15 @@ function iniciarFaseVotacion() {
         }
     }
 
-    // 5. Configurar timeout de 2 minutos (120000 ms) para forzar opción "Todo pasa" a los que no votaron
+    // 5. Configurar timeout de 2 minutos para forzar opción "Me quedo" a los que no votaron
     estadoJuego.votacion.timeoutId = setTimeout(() => {
-        console.log("Tiempo de votación agotado. Asignando 'Todo pasa' a los que no votaron.");
+        console.log("Tiempo de votación agotado. Asignando 'Me quedo' a los que no votaron.");
         // Forzar voto para los que aún no eligieron
         for (let i = 0; i < indicesActivos.length; i++) {
             const jugadorIdx = indicesActivos[i];
             if (estadoJuego.votacion.opciones[jugadorIdx] === null) {
-                // Asignar opción 2 = "Todo pasa"
-                estadoJuego.votacion.opciones[jugadorIdx] = 2;
+                // Asignar opción 1 = "Me quedo"
+                estadoJuego.votacion.opciones[jugadorIdx] = 1;
             }
         }
         // Procesar los votos

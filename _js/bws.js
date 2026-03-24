@@ -98,31 +98,7 @@ function ocultarPreloader() {
     }
 }
 
-function precargarImagenesDeCartas(mazo, callback) {
-    if (!mazo || mazo.length === 0) {
-        if (callback) callback();
-        return;
-    }
-    const total = mazo.length;
-    let cargadas = 0;
-    actualizarPreloader(`Cargando cartas (0/${total})`, 0);
-    mazo.forEach(carta => {
-        const img = new Image();
-        img.onload = () => {
-            cargadas++;
-            const porcentaje = (cargadas / total) * 100;
-            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
-            if (cargadas === total && callback) callback();
-        };
-        img.onerror = () => {
-            cargadas++;
-            const porcentaje = (cargadas / total) * 100;
-            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
-            if (cargadas === total && callback) callback();
-        };
-        img.src = carta[2];
-    });
-}
+
 
 // ============================================================
 // BWS ANIMACIONES — animarCotizacion
@@ -302,39 +278,22 @@ function precargarImagenesDeCartas(mazo, callback) {
         if (callback) callback();
         return;
     }
-    // Mostrar modal
-    const modalCarga = document.getElementById('ModalCargaCartas');
-    if (modalCarga) modalCarga.style.display = 'flex';
-    
-    const barra = document.getElementById('BarraCargaCartas');
-    const texto = document.getElementById('TextoProgresoCarga');
     const total = mazo.length;
     let cargadas = 0;
-    
-    texto.innerText = `0 / ${total}`;
-    
-    function actualizarProgreso() {
-        const porcentaje = (cargadas / total) * 100;
-        if (barra) barra.style.width = porcentaje + '%';
-        if (texto) texto.innerText = `${cargadas} / ${total}`;
-        if (cargadas === total) {
-            // Carga completa, esperar un momento para que se vea el 100% y luego ocultar modal
-            setTimeout(() => {
-                if (modalCarga) modalCarga.style.display = 'none';
-                if (callback) callback();
-            }, 300);
-        }
-    }
-    
+    actualizarPreloader(`Cargando cartas (0/${total})`, 0);
     mazo.forEach(carta => {
         const img = new Image();
         img.onload = () => {
             cargadas++;
-            actualizarProgreso();
+            const porcentaje = (cargadas / total) * 100;
+            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
+            if (cargadas === total && callback) callback();
         };
         img.onerror = () => {
             cargadas++;
-            actualizarProgreso();
+            const porcentaje = (cargadas / total) * 100;
+            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
+            if (cargadas === total && callback) callback();
         };
         img.src = carta[2];
     });
@@ -762,9 +721,8 @@ socket.on('solicitarOpcionCartas', (data) => {
     temporizadorVotacion = setInterval(() => {
         if (tiempoRestante <= 0) {
             clearInterval(temporizadorVotacion);
-            if (modalVotacion && modalVotacion.style.display === 'flex' && !votoEnviado) {
-                enviarVoto(2); // 2 = todo puede pasar
-            }
+            // El servidor se encarga de asignar "me quedo" si no votó
+            console.log("Tiempo agotado, esperando decisión del servidor...");
         } else {
             const minutos = Math.floor(tiempoRestante / 60);
             const segundos = tiempoRestante % 60;
