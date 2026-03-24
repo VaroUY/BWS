@@ -98,31 +98,7 @@ function ocultarPreloader() {
     }
 }
 
-function precargarImagenesDeCartas(mazo, callback) {
-    if (!mazo || mazo.length === 0) {
-        if (callback) callback();
-        return;
-    }
-    const total = mazo.length;
-    let cargadas = 0;
-    actualizarPreloader(`Cargando cartas (0/${total})`, 0);
-    mazo.forEach(carta => {
-        const img = new Image();
-        img.onload = () => {
-            cargadas++;
-            const porcentaje = (cargadas / total) * 100;
-            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
-            if (cargadas === total && callback) callback();
-        };
-        img.onerror = () => {
-            cargadas++;
-            const porcentaje = (cargadas / total) * 100;
-            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
-            if (cargadas === total && callback) callback();
-        };
-        img.src = carta[2];
-    });
-}
+
 
 // ============================================================
 // BWS ANIMACIONES — animarCotizacion
@@ -297,7 +273,31 @@ socket.on('abrirSeleccionPersonaje', (jugadoresServer) => {
 });
 
 //--- ** DEEPSEEK: Función para precargar todas las imágenes del mazo con modal de progreso
-
+function precargarImagenesDeCartas(mazo, callback) {
+    if (!mazo || mazo.length === 0) {
+        if (callback) callback();
+        return;
+    }
+    const total = mazo.length;
+    let cargadas = 0;
+    actualizarPreloader(`Cargando cartas (0/${total})`, 0);
+    mazo.forEach(carta => {
+        const img = new Image();
+        img.onload = () => {
+            cargadas++;
+            const porcentaje = (cargadas / total) * 100;
+            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
+            if (cargadas === total && callback) callback();
+        };
+        img.onerror = () => {
+            cargadas++;
+            const porcentaje = (cargadas / total) * 100;
+            actualizarPreloader(`Cargando cartas (${cargadas}/${total})`, porcentaje);
+            if (cargadas === total && callback) callback();
+        };
+        img.src = carta[2];
+    });
+}
 
 // --- LA PARTIDA COMIENZA PARA TODOS ---
 
@@ -308,6 +308,10 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
         return;
     }
     _partidaYaInicializada = true;
+
+    // Cerrar modal de votación si estaba abierto
+    cerrarModalVotacion();
+
     document.getElementById('ModalSeleccionNombre').style.display = 'none';
     let miPosicionEnArray = estadoRecibido.jugadores.findIndex(j => j.socketId === socket.id);
     miAsientoLocal = miPosicionEnArray + 1;
@@ -345,6 +349,16 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
                 document.getElementById("Jugador" + num + "_McDonalds").innerHTML = "";
             }
         });
+
+        // --- ** DEEPSEEK: Asignar las manos predefinidas por el servidor
+        if (estadoRecibido.manos) {
+            const miIndice = miAsientoLocal - 1;
+            const misCartas = estadoRecibido.manos[miIndice];
+            if (misCartas) {
+                window._misCartasURLs = misCartas.map(c => c[2]);
+            }
+        }
+
         document.getElementById('TurnoJugador').innerHTML = _jugadores[0][0];
         document.getElementById('MInteractivoTituloMaso').innerHTML = "Movimientos : " + _valorIndice + "/68";
         gestionarBloqueoPantalla(1, estadoRecibido.jugadores);
@@ -358,7 +372,10 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
         // Ocultar preloader y mostrar el juego
         ocultarPreloader();
 
-        // Mostrar el modal correspondiente según el rol guardado
+        // Asegurar que el bloqueo de turno se aplique después de que todas las cartas se hayan mostrado
+        gestionarBloqueoPantalla(1, estadoRecibido.jugadores);
+
+        // Mostrar el modal correspondiente según el rol guardado (comentado)
 //        if (window._rolRecibido === 'host') {
 //            document.getElementById('ModalBackend').style.display = 'flex';
 //        } else if (window._rolRecibido === 'espera') {
@@ -616,6 +633,145 @@ socket.on('cerrarCartaEspera', () => {
     document.getElementById('ModalCartaEspera').style.display = 'none';
 });
 
+// ============================================================
+// EVENTO: VOTACIÓN DE CARTAS INICIALES
+// ============================================================
+// ============================================================
+// EVENTO: VOTACIÓN DE CARTAS INICIALES
+// ============================================================
+let temporizadorVotacion = null;
+let modalVotacion = null;
+let votoEnviado = false;  // Nuevo: evitar múltiples votos
+
+function crearModalVotacion() {
+    if (document.getElementById('ModalVotacionCartas')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'ModalVotacionCartas';
+    modal.style.cssText = 'display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 20000; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div class="bws-modal-up" style="background: #000000; border: 1px solid #5b2d8e; border-radius: 14px; padding: 28px 32px; width: 560px; text-align: center; box-shadow: 0 0 40px rgba(168,85,247,0.2);">
+            <div style="width:160px; height:2px; background:linear-gradient(90deg, transparent, #a855f7, transparent); margin: 0 auto 16px auto;"></div>
+            <h2 style="color: #ffffff; font-family: 'Rajdhani', sans-serif; font-size: 20px; letter-spacing: 3px;">ELIGE TU POSTURA</h2>
+            <p style="color: #a855f7; font-size: 11px; letter-spacing: 2px; margin-bottom: 16px;">MIRA TUS CARTAS Y DECIDE</p>
+            <div id="cartasVotacion" style="display: flex; justify-content: center; gap: 10px; margin: 20px 0;"></div>
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+                <button id="votarQuedo" style="background: #28a745; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-weight: bold; cursor: pointer;">ME QUEDO</button>
+                <button id="votarTodoPasa" style="background: #ffc107; color: black; border: none; border-radius: 8px; padding: 10px 24px; font-weight: bold; cursor: pointer;">TODO PUEDE PASAR</button>
+                <button id="votarCambiar" style="background: #dc3545; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-weight: bold; cursor: pointer;">ESTOY PARA CAMBIAR</button>
+            </div>
+            <p id="tiempoRestanteVotacion" style="color: #8ca0b8; font-family: 'Share Tech Mono', monospace; font-size: 14px; margin-top: 12px;">Tiempo restante: 02:00</p>
+            <div id="mensajeEsperaVotacion" style="display: none; color: #a855f7; font-size: 12px; margin-top: 12px;">Esperando a los demás jugadores...</div>
+            <div style="width:100px; height:1px; background:linear-gradient(90deg, transparent, #5b2d8e, transparent); margin: 16px auto 0 auto;"></div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modalVotacion = modal;
+}
+
+socket.on('solicitarOpcionCartas', (data) => {
+    console.log("Recibida solicitud de votación de cartas", data);
+    const { cartas, tiempoLimite } = data;
+
+    // Ocultar el selector de asientos si está visible
+    const modalAsientos = document.getElementById('ModalSeleccionNombre');
+    if (modalAsientos) modalAsientos.style.display = 'none';
+
+    crearModalVotacion();
+
+    // === REINICIAR ESTADO DEL MODAL PARA UN NUEVO CICLO ===
+    // Limpiar temporizador anterior
+    if (temporizadorVotacion) clearInterval(temporizadorVotacion);
+    // Reiniciar flag de voto
+    votoEnviado = false;
+    // Habilitar botones y restaurar opacidad
+    const btnQuedo = document.getElementById('votarQuedo');
+    const btnTodoPasa = document.getElementById('votarTodoPasa');
+    const btnCambiar = document.getElementById('votarCambiar');
+    if (btnQuedo) {
+        btnQuedo.disabled = false;
+        btnQuedo.style.opacity = '1';
+    }
+    if (btnTodoPasa) {
+        btnTodoPasa.disabled = false;
+        btnTodoPasa.style.opacity = '1';
+    }
+    if (btnCambiar) {
+        btnCambiar.disabled = false;
+        btnCambiar.style.opacity = '1';
+    }
+    // Ocultar mensaje de espera
+    const mensajeEspera = document.getElementById('mensajeEsperaVotacion');
+    if (mensajeEspera) mensajeEspera.style.display = 'none';
+    // =================================================
+
+    const contenedorCartas = document.getElementById('cartasVotacion');
+    contenedorCartas.innerHTML = '';
+    cartas.forEach(carta => {
+        const img = document.createElement('img');
+        img.src = carta[2];
+        img.style.width = '80px';
+        img.style.borderRadius = '6px';
+        img.style.margin = '0 5px';
+        contenedorCartas.appendChild(img);
+    });
+
+    let tiempoRestante = tiempoLimite;
+    const tiempoSpan = document.getElementById('tiempoRestanteVotacion');
+    temporizadorVotacion = setInterval(() => {
+        if (tiempoRestante <= 0) {
+            clearInterval(temporizadorVotacion);
+            // El servidor se encarga de asignar "me quedo" si no votó
+            console.log("Tiempo agotado, esperando decisión del servidor...");
+        } else {
+            const minutos = Math.floor(tiempoRestante / 60);
+            const segundos = tiempoRestante % 60;
+            tiempoSpan.innerText = `Tiempo restante: ${minutos.toString().padStart(2,'0')}:${segundos.toString().padStart(2,'0')}`;
+            tiempoRestante--;
+        }
+    }, 1000);
+
+    modalVotacion.style.display = 'flex';
+
+    // Asignar eventos (ya están con la referencia actualizada)
+    const manejarVoto = (opcion) => {
+        if (votoEnviado) return;
+        votoEnviado = true;
+        // Deshabilitar botones
+        btnQuedo.disabled = true;
+        btnTodoPasa.disabled = true;
+        btnCambiar.disabled = true;
+        btnQuedo.style.opacity = '0.5';
+        btnTodoPasa.style.opacity = '0.5';
+        btnCambiar.style.opacity = '0.5';
+        // Mostrar mensaje de espera
+        if (mensajeEspera) mensajeEspera.style.display = 'block';
+        // Enviar voto
+        enviarVoto(opcion);
+    };
+
+    btnQuedo.onclick = () => manejarVoto(1);
+    btnTodoPasa.onclick = () => manejarVoto(2);
+    btnCambiar.onclick = () => manejarVoto(3);
+});
+
+function enviarVoto(opcion) {
+    if (!miAsientoLocal) {
+        console.error("No se ha definido mi asiento");
+        return;
+    }
+    const indiceJugador = miAsientoLocal - 1;
+    socket.emit('enviarOpcionVoto', { indice: indiceJugador, opcion: opcion });
+    console.log(`Voto enviado: jugador ${indiceJugador} opción ${opcion}`);
+}
+
+function cerrarModalVotacion() {
+    if (modalVotacion) modalVotacion.style.display = 'none';
+    if (temporizadorVotacion) clearInterval(temporizadorVotacion);
+    // Limpiar variables
+    votoEnviado = false;
+}
+
 // ---------------------------- FUNCIÓN PARA ENVIAR DATOS AL SERVIDOR -----------------------------------//
 
 function sincronizarMiPantallaAlServidor() {
@@ -667,11 +823,15 @@ function sincronizarMiPantallaAlServidor() {
 
 function elegirMiJugador(indice) {
     console.log("Has elegido ser el jugador índice: " + indice);
-    
+
+    // Guardar inmediatamente el asiento elegido
+    miAsientoLocal = indice + 1;          // 1‑based
+    window._miIndiceGlobal = indice;      // 0‑based
+
     // Bloqueamos los botones para que no haga mil clics
     const botones = document.querySelectorAll('#ContenedorBotonesSeleccion button');
     botones.forEach(b => b.disabled = true);
-    
+
     document.getElementById('MensajeEsperaSeleccion').style.display = 'block';
 
     // Le avisamos al servidor nuestra elección
@@ -2227,6 +2387,23 @@ function mostrarCartasJugador() {
     var _miIndice = miAsientoLocal - 1;
     var _auxJ = _miIndice;
 
+    // Si tenemos cartas predefinidas por el servidor, usarlas directamente
+    if (window._misCartasURLs && window._misCartasURLs.length === 4) {
+        console.log("Mostrando cartas desde _misCartasURLs:", window._misCartasURLs);
+        for (var i = 0; i < 4; i++) {
+            // Asegurar que el flag de la carta esté en true (por si acaso)
+            _jugadores[_miIndice][i+1] = true;
+            document.getElementById('CartaMaso'+String(i+1)).src = window._misCartasURLs[i];
+        }
+        document.getElementById("CartaMaso1").disabled = false;
+        document.getElementById("CartaMaso2").disabled = false;
+        document.getElementById("CartaMaso3").disabled = false;
+        document.getElementById("CartaMaso4").disabled = false;
+        return;
+    }
+
+    // Si no hay cartas predefinidas, usar la lógica original basada en índice fijo
+    console.log("Usando lógica original para mostrar cartas");
     if (_miIndice == 1){
         _auxJ = _auxJ + 3;
     } else if (_miIndice == 2){

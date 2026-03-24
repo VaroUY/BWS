@@ -138,6 +138,13 @@ let estadoJuego = {
     // Mazo de Cartas (68 cartas ya entreverado)
     masoCartas: cartasMaestroServer,
 
+    // Estado de votación para cartas iniciales
+    votacion: {
+        activa: false,
+        opciones: [null, null, null, null], // null = no votó, 1=me quedo, 2=todo pasa, 3=cambiar
+        timeoutId: null
+    },
+
     historial: [],
 
     logEmpresas: {
@@ -156,8 +163,108 @@ let estadoJuego = {
     }
 };
 
+// ----------------------------------------------------------------------------------- //
+// ---------------------------------- FUNCIONES DEL SERVIDOR ------------------------- //
+// ----------------------------------------------------------------------------------- //
 
-// ---------------------------------- Lista de conexiones técnicas (Socket ID -> Datos básicos)----------------------//
+
+// Función para iniciar la fase de votación de cartas iniciales
+function iniciarFaseVotacion() {
+    console.log("Iniciando fase de votación de cartas...");
+
+    // 1. Activar estado de votación
+    estadoJuego.votacion.activa = true;
+    estadoJuego.votacion.opciones = [null, null, null, null];
+    if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
+
+    // 2. Obtener los índices de los jugadores activos (con nombre != "Sin Asignar")
+    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
+    const indicesActivos = [];
+    estadoJuego.jugadores.forEach((j, idx) => {
+        if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
+    });
+
+    // 3. Tomar las primeras 16 cartas del mazo (asignadas a cada jugador según su orden)
+    const cartasIniciales = estadoJuego.masoCartas.slice(0, 16);
+    for (let i = 0; i < indicesActivos.length; i++) {
+        const jugadorIdx = indicesActivos[i];
+        const offset = i * 4;
+        const cartasDelJugador = cartasIniciales.slice(offset, offset + 4);
+        estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasDelJugador;
+    }
+
+    // 4. Enviar a cada jugador su mano privada mediante evento personalizado
+    for (let i = 0; i < indicesActivos.length; i++) {
+        const jugadorIdx = indicesActivos[i];
+        const socketId = estadoJuego.jugadores[jugadorIdx].socketId;
+        if (socketId) {
+            const cartas = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
+            io.to(socketId).emit('solicitarOpcionCartas', {
+                cartas: cartas,
+                tiempoLimite: 120 // segundos
+            });
+        }
+    }
+
+    // 5. Configurar timeout de 2 minutos para forzar opción "Me quedo" a los que no votaron
+    estadoJuego.votacion.timeoutId = setTimeout(() => {
+        console.log("Tiempo de votación agotado. Asignando 'Me quedo' a los que no votaron.");
+        // Forzar voto para los que aún no eligieron
+        for (let i = 0; i < indicesActivos.length; i++) {
+            const jugadorIdx = indicesActivos[i];
+            if (estadoJuego.votacion.opciones[jugadorIdx] === null) {
+                // Asignar opción 1 = "Me quedo"
+                estadoJuego.votacion.opciones[jugadorIdx] = 1;
+            }
+        }
+        // Procesar los votos
+        procesarVotos();
+    }, 120000);
+}
+
+// Función para procesar los votos después de que todos hayan votado o por timeout
+function procesarVotos() {
+    if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
+    estadoJuego.votacion.activa = false;
+
+    // Obtener los índices de jugadores activos
+    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
+    const indicesActivos = [];
+    estadoJuego.jugadores.forEach((j, idx) => {
+        if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
+    });
+
+    // Verificar si algún jugador eligió "Me quedo" (opción 1)
+    const algunMeQuedo = indicesActivos.some(idx => estadoJuego.votacion.opciones[idx] === 1);
+
+    if (algunMeQuedo) {
+        console.log("Algún jugador eligió 'Me quedo'. Iniciando partida con manos actuales.");
+        // Iniciar la partida normal con las manos ya repartidas
+        io.emit('partidaListaParaEmpezar', estadoJuego);
+    } else {
+        console.log("Nadie eligió 'Me quedo'. Reordenando el mazo y repartiendo nuevas cartas.");
+        // Mezclar el mazo actual nuevamente (reordenar)
+        estadoJuego.masoCartas = entreverarMazo(estadoJuego.masoCartas);
+        // Repartir las primeras 16 cartas como nuevas manos
+        const nuevasCartas = estadoJuego.masoCartas.slice(0, 16);
+        for (let i = 0; i < indicesActivos.length; i++) {
+            const jugadorIdx = indicesActivos[i];
+            const offset = i * 4;
+            const cartasJugador = nuevasCartas.slice(offset, offset + 4);
+            estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasJugador;
+        }
+        // Ahora iniciar la partida con las nuevas manos
+        io.emit('partidaListaParaEmpezar', estadoJuego);
+    }
+
+    // Limpiar datos temporales de cartas en los jugadores (opcional)
+    for (let i = 0; i < indicesActivos.length; i++) {
+        delete estadoJuego.jugadores[indicesActivos[i]].cartasTemporales;
+    }
+}
+// ----------------------------------------------------------------------------------- //
+// ---------------------------------- EVENTOS  (Socket ID -> Datos básicos)----------------------//
+// ----------------------------------------------------------------------------------- //
 
 let usuariosConectados = {};
 // NUEVA variable para saber si el Host ya arrancó el juego
@@ -270,15 +377,124 @@ socket.on('usuarioEligioNombre', (indice) => {
                 miIndice: indice
             });
         } else {
-            // Todos listos — iniciamos partida nueva para todos
-            console.log("Todos listos. Iniciando partida nueva...");
-            io.emit('partidaListaParaEmpezar', estadoJuego);
+            // Todos listos — iniciamos la fase de votación de cartas
+            console.log("Todos listos. Iniciando fase de votación...");
+            iniciarFaseVotacion();
         }
     } else {
         // No están todos listos — actualizamos el modal de selección a todos
         io.emit('abrirSeleccionPersonaje', estadoJuego.jugadores);
     }
 });
+
+// Función para iniciar la fase de votación de cartas iniciales
+function iniciarFaseVotacion() {
+    console.log("Iniciando fase de votación de cartas...");
+
+    // 1. Activar estado de votación
+    estadoJuego.votacion.activa = true;
+    estadoJuego.votacion.opciones = [null, null, null, null];
+    if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
+
+    // 2. Obtener los índices de los jugadores activos (con nombre != "Sin Asignar")
+    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
+    const indicesActivos = [];
+    estadoJuego.jugadores.forEach((j, idx) => {
+        if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
+    });
+
+    // 3. Tomar las primeras 16 cartas del mazo (asignadas a cada jugador según su orden)
+    //    Nota: en tu lógica original, las cartas de mano se asignan con índices fijos basados en el asiento.
+    //    Por simplicidad, enviaremos a cada jugador sus 4 cartas según la posición en el mazo.
+    //    La función `mostrarCartasJugador` en el cliente usa cartasMaestro y los índices calculados en base a miAsientoLocal.
+    //    Para que el cliente muestre las cartas correctas, debemos enviarle las URLs de sus cartas.
+    //    Guardamos las cartas en estadoJuego.jugadores para que luego se puedan mostrar.
+
+    // Calcular las primeras 16 posiciones del mazo (índices 0 a 15)
+    const cartasIniciales = estadoJuego.masoCartas.slice(0, 16);
+    // Distribuir a los jugadores: cada jugador recibe 4 cartas consecutivas según orden de índice
+    for (let i = 0; i < indicesActivos.length; i++) {
+        const jugadorIdx = indicesActivos[i];
+        const offset = i * 4;
+        // Asignamos las cartas en el array _jugadores del cliente más adelante,
+        // pero aquí solo necesitamos enviarlas.
+        const cartasDelJugador = cartasIniciales.slice(offset, offset + 4);
+        // Guardamos temporalmente en el objeto jugador (opcional)
+        estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasDelJugador;
+    }
+
+    // 4. Enviar a cada jugador su mano privada mediante evento personalizado
+    for (let i = 0; i < indicesActivos.length; i++) {
+        const jugadorIdx = indicesActivos[i];
+        const socketId = estadoJuego.jugadores[jugadorIdx].socketId;
+        if (socketId) {
+            const cartas = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
+            io.to(socketId).emit('solicitarOpcionCartas', {
+                cartas: cartas,
+                tiempoLimite: 120 // segundos
+            });
+        }
+    }
+
+    // 5. Configurar timeout de 2 minutos (120000 ms) para forzar opción "Todo pasa" a los que no votaron
+    estadoJuego.votacion.timeoutId = setTimeout(() => {
+        console.log("Tiempo de votación agotado. Asignando 'Todo pasa' a los que no votaron.");
+        // Forzar voto para los que aún no eligieron
+        for (let i = 0; i < indicesActivos.length; i++) {
+            const jugadorIdx = indicesActivos[i];
+            if (estadoJuego.votacion.opciones[jugadorIdx] === null) {
+                // Asignar opción 2 = "Todo pasa"
+                estadoJuego.votacion.opciones[jugadorIdx] = 2;
+            }
+        }
+        // Procesar los votos
+        procesarVotos();
+    }, 120000);
+}
+
+// Función para procesar los votos después de que todos hayan votado o por timeout
+function procesarVotos() {
+    if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
+    estadoJuego.votacion.activa = false;
+
+    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
+    const indicesActivos = [];
+    estadoJuego.jugadores.forEach((j, idx) => {
+        if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
+    });
+
+    const algunMeQuedo = indicesActivos.some(idx => estadoJuego.votacion.opciones[idx] === 1);
+
+    if (algunMeQuedo) {
+        console.log("Algún jugador eligió 'Me quedo'. Iniciando partida con manos actuales.");
+        // Preparar el objeto con las manos para enviar a los clientes
+        const estadoParaEnviar = { ...estadoJuego };
+        estadoParaEnviar.manos = {};
+        for (let i = 0; i < indicesActivos.length; i++) {
+            const jugadorIdx = indicesActivos[i];
+            estadoParaEnviar.manos[jugadorIdx] = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
+        }
+        // Limpiar datos temporales
+        for (let i = 0; i < indicesActivos.length; i++) {
+            delete estadoJuego.jugadores[indicesActivos[i]].cartasTemporales;
+        }
+        io.emit('partidaListaParaEmpezar', estadoParaEnviar);
+    } else {
+        console.log("Nadie eligió 'Me quedo'. Reordenando mazo y repartiendo nuevas manos.");
+        // Mezclar el mazo actual nuevamente
+        estadoJuego.masoCartas = entreverarMazo(estadoJuego.masoCartas);
+        // Repartir nuevas 16 cartas
+        const nuevasCartas = estadoJuego.masoCartas.slice(0, 16);
+        for (let i = 0; i < indicesActivos.length; i++) {
+            const jugadorIdx = indicesActivos[i];
+            const offset = i * 4;
+            const cartasJugador = nuevasCartas.slice(offset, offset + 4);
+            estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasJugador;
+        }
+        // Reiniciar la votación
+        iniciarFaseVotacion();
+    }
+}
 
 // --------------------------------------
 
@@ -388,6 +604,33 @@ socket.on('finalizarTurno', (datos) => {
         jugadores: estadoJuego.jugadores
     });
     console.log("El nuevo turno es del jugador índice:", proximoTurno);
+});
+
+// --- RECIBIR VOTO DEL JUGADOR EN LA FASE DE VOTACIÓN
+socket.on('enviarOpcionVoto', (data) => {
+    const { indice, opcion } = data;
+    console.log(`Voto recibido: jugador índice ${indice}, opción ${opcion}`);
+
+    if (estadoJuego.votacion.activa && estadoJuego.votacion.opciones[indice] === null) {
+        estadoJuego.votacion.opciones[indice] = opcion;
+        console.log(`Voto registrado para jugador ${indice}. Opciones actuales:`, estadoJuego.votacion.opciones);
+
+        // Verificar si todos los jugadores activos ya votaron
+        const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
+        const indicesActivos = [];
+        estadoJuego.jugadores.forEach((j, idx) => {
+            if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
+        });
+
+        const todosVotaron = indicesActivos.every(idx => estadoJuego.votacion.opciones[idx] !== null);
+
+        if (todosVotaron) {
+            console.log("Todos los jugadores votaron. Procesando resultados...");
+            procesarVotos();
+        }
+    } else {
+        console.log(`Voto ignorado: votación no activa o ya había votado para índice ${indice}`);
+    }
 });
 
 // forzado por SALTEAR bottom
