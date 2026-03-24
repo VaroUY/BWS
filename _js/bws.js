@@ -719,7 +719,32 @@ socket.on('solicitarOpcionCartas', (data) => {
     if (modalAsientos) modalAsientos.style.display = 'none';
 
     crearModalVotacion();
-    votoEnviado = false;  // Reiniciar estado
+
+    // === REINICIAR ESTADO DEL MODAL PARA UN NUEVO CICLO ===
+    // Limpiar temporizador anterior
+    if (temporizadorVotacion) clearInterval(temporizadorVotacion);
+    // Reiniciar flag de voto
+    votoEnviado = false;
+    // Habilitar botones y restaurar opacidad
+    const btnQuedo = document.getElementById('votarQuedo');
+    const btnTodoPasa = document.getElementById('votarTodoPasa');
+    const btnCambiar = document.getElementById('votarCambiar');
+    if (btnQuedo) {
+        btnQuedo.disabled = false;
+        btnQuedo.style.opacity = '1';
+    }
+    if (btnTodoPasa) {
+        btnTodoPasa.disabled = false;
+        btnTodoPasa.style.opacity = '1';
+    }
+    if (btnCambiar) {
+        btnCambiar.disabled = false;
+        btnCambiar.style.opacity = '1';
+    }
+    // Ocultar mensaje de espera
+    const mensajeEspera = document.getElementById('mensajeEsperaVotacion');
+    if (mensajeEspera) mensajeEspera.style.display = 'none';
+    // =================================================
 
     const contenedorCartas = document.getElementById('cartasVotacion');
     contenedorCartas.innerHTML = '';
@@ -734,7 +759,6 @@ socket.on('solicitarOpcionCartas', (data) => {
 
     let tiempoRestante = tiempoLimite;
     const tiempoSpan = document.getElementById('tiempoRestanteVotacion');
-    if (temporizadorVotacion) clearInterval(temporizadorVotacion);
     temporizadorVotacion = setInterval(() => {
         if (tiempoRestante <= 0) {
             clearInterval(temporizadorVotacion);
@@ -751,11 +775,7 @@ socket.on('solicitarOpcionCartas', (data) => {
 
     modalVotacion.style.display = 'flex';
 
-    const btnQuedo = document.getElementById('votarQuedo');
-    const btnTodoPasa = document.getElementById('votarTodoPasa');
-    const btnCambiar = document.getElementById('votarCambiar');
-
-    // Función para manejar el voto
+    // Asignar eventos (ya están con la referencia actualizada)
     const manejarVoto = (opcion) => {
         if (votoEnviado) return;
         votoEnviado = true;
@@ -767,8 +787,7 @@ socket.on('solicitarOpcionCartas', (data) => {
         btnTodoPasa.style.opacity = '0.5';
         btnCambiar.style.opacity = '0.5';
         // Mostrar mensaje de espera
-        const mensaje = document.getElementById('mensajeEsperaVotacion');
-        if (mensaje) mensaje.style.display = 'block';
+        if (mensajeEspera) mensajeEspera.style.display = 'block';
         // Enviar voto
         enviarVoto(opcion);
     };
