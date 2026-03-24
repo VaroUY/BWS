@@ -297,48 +297,7 @@ socket.on('abrirSeleccionPersonaje', (jugadoresServer) => {
 });
 
 //--- ** DEEPSEEK: Función para precargar todas las imágenes del mazo con modal de progreso
-function precargarImagenesDeCartas(mazo, callback) {
-    if (!mazo || mazo.length === 0) {
-        if (callback) callback();
-        return;
-    }
-    // Mostrar modal
-    const modalCarga = document.getElementById('ModalCargaCartas');
-    if (modalCarga) modalCarga.style.display = 'flex';
-    
-    const barra = document.getElementById('BarraCargaCartas');
-    const texto = document.getElementById('TextoProgresoCarga');
-    const total = mazo.length;
-    let cargadas = 0;
-    
-    texto.innerText = `0 / ${total}`;
-    
-    function actualizarProgreso() {
-        const porcentaje = (cargadas / total) * 100;
-        if (barra) barra.style.width = porcentaje + '%';
-        if (texto) texto.innerText = `${cargadas} / ${total}`;
-        if (cargadas === total) {
-            // Carga completa, esperar un momento para que se vea el 100% y luego ocultar modal
-            setTimeout(() => {
-                if (modalCarga) modalCarga.style.display = 'none';
-                if (callback) callback();
-            }, 300);
-        }
-    }
-    
-    mazo.forEach(carta => {
-        const img = new Image();
-        img.onload = () => {
-            cargadas++;
-            actualizarProgreso();
-        };
-        img.onerror = () => {
-            cargadas++;
-            actualizarProgreso();
-        };
-        img.src = carta[2];
-    });
-}
+
 
 // --- LA PARTIDA COMIENZA PARA TODOS ---
 
