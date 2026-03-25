@@ -2391,9 +2391,12 @@ function mostrarCartasJugador() {
     if (window._misCartasURLs && window._misCartasURLs.length === 4) {
         console.log("Mostrando cartas desde _misCartasURLs:", window._misCartasURLs);
         for (var i = 0; i < 4; i++) {
-            // Asegurar que el flag de la carta esté en true (por si acaso)
-            _jugadores[_miIndice][i+1] = true;
-            document.getElementById('CartaMaso'+String(i+1)).src = window._misCartasURLs[i];
+            // NO forzar el flag a true; respetar el estado real (_jugadores ya contiene si se jugó o no)
+            if (_jugadores[_miIndice][i+1]) {
+                document.getElementById('CartaMaso'+String(i+1)).src = window._misCartasURLs[i];
+            } else {
+                document.getElementById('CartaMaso'+String(i+1)).src = "_imagenes/CartaEjemploAtras.png";
+            }
         }
         document.getElementById("CartaMaso1").disabled = false;
         document.getElementById("CartaMaso2").disabled = false;
