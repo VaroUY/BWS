@@ -170,6 +170,12 @@ let estadoJuego = {
 
 // Función para iniciar la fase de votación de cartas iniciales
 function iniciarFaseVotacion() {
+    // Evita ejecutar si la partida ya ha comenzado
+    if (estadoJuego.entorno.IndiceJuego > 0 || estadoJuego.entorno.TurnoJugador > 0 || estadoJuego.entorno.cartaJugada === true) {
+        console.log("Partida ya en curso, no se inicia votación.");
+        return;
+    }
+
     console.log("Iniciando fase de votación de cartas...");
 
     // 1. Activar estado de votación
@@ -388,69 +394,7 @@ socket.on('usuarioEligioNombre', (indice) => {
 });
 
 // Función para iniciar la fase de votación de cartas iniciales
-function iniciarFaseVotacion() {
-    console.log("Iniciando fase de votación de cartas...");
 
-    // 1. Activar estado de votación
-    estadoJuego.votacion.activa = true;
-    estadoJuego.votacion.opciones = [null, null, null, null];
-    if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
-
-    // 2. Obtener los índices de los jugadores activos (con nombre != "Sin Asignar")
-    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
-    const indicesActivos = [];
-    estadoJuego.jugadores.forEach((j, idx) => {
-        if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
-    });
-
-    // 3. Tomar las primeras 16 cartas del mazo (asignadas a cada jugador según su orden)
-    //    Nota: en tu lógica original, las cartas de mano se asignan con índices fijos basados en el asiento.
-    //    Por simplicidad, enviaremos a cada jugador sus 4 cartas según la posición en el mazo.
-    //    La función `mostrarCartasJugador` en el cliente usa cartasMaestro y los índices calculados en base a miAsientoLocal.
-    //    Para que el cliente muestre las cartas correctas, debemos enviarle las URLs de sus cartas.
-    //    Guardamos las cartas en estadoJuego.jugadores para que luego se puedan mostrar.
-
-    // Calcular las primeras 16 posiciones del mazo (índices 0 a 15)
-    const cartasIniciales = estadoJuego.masoCartas.slice(0, 16);
-    // Distribuir a los jugadores: cada jugador recibe 4 cartas consecutivas según orden de índice
-    for (let i = 0; i < indicesActivos.length; i++) {
-        const jugadorIdx = indicesActivos[i];
-        const offset = i * 4;
-        // Asignamos las cartas en el array _jugadores del cliente más adelante,
-        // pero aquí solo necesitamos enviarlas.
-        const cartasDelJugador = cartasIniciales.slice(offset, offset + 4);
-        // Guardamos temporalmente en el objeto jugador (opcional)
-        estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasDelJugador;
-    }
-
-    // 4. Enviar a cada jugador su mano privada mediante evento personalizado
-    for (let i = 0; i < indicesActivos.length; i++) {
-        const jugadorIdx = indicesActivos[i];
-        const socketId = estadoJuego.jugadores[jugadorIdx].socketId;
-        if (socketId) {
-            const cartas = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
-            io.to(socketId).emit('solicitarOpcionCartas', {
-                cartas: cartas,
-                tiempoLimite: 120 // segundos
-            });
-        }
-    }
-
-    // 5. Configurar timeout de 2 minutos (120000 ms) para forzar opción "Todo pasa" a los que no votaron
-    estadoJuego.votacion.timeoutId = setTimeout(() => {
-        console.log("Tiempo de votación agotado. Asignando 'Todo pasa' a los que no votaron.");
-        // Forzar voto para los que aún no eligieron
-        for (let i = 0; i < indicesActivos.length; i++) {
-            const jugadorIdx = indicesActivos[i];
-            if (estadoJuego.votacion.opciones[jugadorIdx] === null) {
-                // Asignar opción 2 = "Todo pasa"
-                estadoJuego.votacion.opciones[jugadorIdx] = 2;
-            }
-        }
-        // Procesar los votos
-        procesarVotos();
-    }, 120000);
-}
 
 // Función para procesar los votos después de que todos hayan votado o por timeout
 function procesarVotos() {
@@ -675,6 +619,60 @@ socket.on('registrarTransaccion', (transaccion) => {
 
     estadoJuego.historial.push(transaccion);
     io.emit('actualizarHistorial', estadoJuego.historial);
+});
+
+// --- GAME OVER (broadcast a todos)
+socket.on('gameOver', (data) => {
+    console.log('Game over event recibido:', data);
+    io.emit('gameOver', data);
+});
+
+// --- REINICIO DEL JUEGO (NEXT GAME)
+socket.on('resetGame', () => {
+    console.log('Reiniciando juego por solicitud de cliente...');
+    
+    // Resetear todo el estado del juego a valores iniciales
+    estadoJuego = {
+        precios: { heineken: 1000, nike: 1000, gatorade: 1000, mcdonalds: 1000 },
+        entorno: {
+            IndiceJuego: 0,
+            TurnoJugador: 0,
+            cartaJugada: false,
+            cartaActual: null
+        },
+        jugadores: [
+            { id: 1, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
+            { id: 2, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
+            { id: 3, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
+            { id: 4, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true }
+        ],
+        masoCartas: cartasMaestroServer,
+        votacion: {
+            activa: false,
+            opciones: [null, null, null, null],
+            timeoutId: null
+        },
+        historial: [],
+        logEmpresas: {
+            heineken: [1000],
+            gatorade: [1000],
+            nike: [1000],
+            mcdonalds: [1000],
+            labels: ["0"]
+        },
+        logJugadores: {
+            j1: [4000],
+            j2: [4000],
+            j3: [4000],
+            j4: [4000]
+        }
+    };
+
+    // Resetear variable de partida iniciada
+    partidaIniciada = false;
+
+    // Emitir a todos los clientes que reinicien la interfaz
+    io.emit('resetCliente');
 });
 
 //-------------------------  D. DESCONEXIÓN

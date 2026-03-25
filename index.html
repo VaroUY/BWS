@@ -850,6 +850,26 @@
         <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 12px auto 0 auto;"></div>
       </div>
     </div>
+<!-- MODAL GAME OVER -->
+<!-- MODAL GAME OVER -->
+<div id="ModalGameOver" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 30000; background: rgba(0,0,0,0.1); align-items: center; justify-content: center;">
+  <div id="GameOverContainer" style="position: absolute; background: #000000; border: 2px solid #ffc107; border-radius: 20px; padding: 40px 50px; width: 70%; max-width: 1000px; min-width: 600px; text-align: center; box-shadow: 0 0 60px rgba(255,193,7,0.3); cursor: grab;">
+    <div style="width:80%; height:2px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin: 0 auto 20px auto;"></div>
+    <div style="margin-bottom: 20px;">
+      <img id="GameOverLogo" src="_imagenes/logo75.png" style="width: 240px; height: auto; display: block; margin: 0 auto;">
+    </div>
+    <h1 id="GameOverTitulo" style="color: #ffc107; font-family: 'Impact', 'Arial Black', sans-serif; font-size: 60px; font-weight: 500; letter-spacing: 4px; margin-bottom: 10px; text-shadow: 0 0 20px rgba(255,193,7,0.5);">GAME OVER!</h1>
+    <p id="GameOverSubtitulo" style="color: #a855f7; font-family: 'Impact', 'Arial Black', sans-serif; font-size: 48px; font-weight: normal; letter-spacing: 3px; margin-bottom: 20px;">&nbsp;</p>
+    <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin-bottom: 20px;"></div>
+    <div id="GameOverContenido" style="color: #ffffff; font-family: 'Share Tech Mono', monospace; font-size: 24px; margin: 30px 0; line-height: 1.8;">
+      <!-- Aquí se mostrará el contenido dinámico -->
+    </div>
+    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
+      <button id="BtnNextGame" style="background: #89152b; color: white; border: none; border-radius: 8px; padding: 12px 32px; font-size: 18px; font-family: 'Impact', 'Arial Black', sans-serif; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;">NEXT GAME</button>
+    </div>
+    <div style="width:60%; height:1px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin: 20px auto 0 auto;"></div>
+  </div>
+</div>  
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

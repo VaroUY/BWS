@@ -23,6 +23,7 @@ var _historialTransacciones = [];
 var cartasMaestro = [];
 var _lineChartInstance = null;
 var _actualizarGrafica = false;
+var _gameOver = false; // Para evitar múltiples triggers
 
 // ---------------------------------------------------------------------------------------------//
 
@@ -633,9 +634,30 @@ socket.on('cerrarCartaEspera', () => {
     document.getElementById('ModalCartaEspera').style.display = 'none';
 });
 
-// ============================================================
-// EVENTO: VOTACIÓN DE CARTAS INICIALES
-// ============================================================
+// ------------------ reseteo de partida 
+
+socket.on('resetCliente', () => {
+    console.log("Reiniciando interfaz del cliente...");
+    // Ocultar modal Game Over si está visible
+    const modal = document.getElementById('ModalGameOver');
+    if (modal) modal.style.display = 'none';
+    // Resetear bandera de game over
+    _gameOver = false;
+    // Recargar la página para un reinicio completo y limpio
+    window.location.reload();
+});
+
+socket.on('gameOver', (data) => {
+    console.log('Game over recibido:', data);
+    _gameOver = true;   // deshabilitar interacciones localmente
+
+    if (data.type === 'bankruptcy') {
+        mostrarQuiebreBanca(data.perdedores);
+    } else if (data.type === 'endOfDeck') {
+        mostrarGameOver(data.ganador);
+    }
+});
+
 // ============================================================
 // EVENTO: VOTACIÓN DE CARTAS INICIALES
 // ============================================================
@@ -1341,162 +1363,166 @@ function redondeos(){
 //---------------------------------- TOPES -------------------------------------------//
 
 function topes() {
+    console.log(" Calculo de TOPES ");
 
-	console.log(" Calculo de TOPES ")	;
+    // Si el juego ya terminó, no seguir
+    if (window._gameOver) return;
 
+    var _valorReventada;
+    var _auxUserCash;
+    var _auxUserAcciones;
 
-	var _valorReventada ;
-	var	_auxUserCash ;
-	var _auxUserAcciones ; 
+    // ========== REVIENTA (máximo 2500) ==========
+    if (_valorHeineken > 2500) {
+        _valorReventada = _valorHeineken - 2500;
+        _valorHeineken = 2500;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                _auxUserCash = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML));
+                _auxUserAcciones = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Heineken").innerHTML));
+                document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
+                console.log(">>>> revento Heineken ");
+            }
+        }
+    }
 
-	// aca se puede mejorar ya que hace ochocientas preguntas al pedo ... falta anidar los if ( else if )
+    if (_valorGatorade > 2500) {
+        _valorReventada = _valorGatorade - 2500;
+        _valorGatorade = 2500;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                _auxUserCash = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML));
+                _auxUserAcciones = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Gatorade").innerHTML));
+                document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
+                console.log(">>>> revento Gatorade  ");
+            }
+        }
+    }
 
-	// revienta 
+    if (_valorMcDonalds > 2500) {
+        _valorReventada = _valorMcDonalds - 2500;
+        _valorMcDonalds = 2500;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                _auxUserCash = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML));
+                _auxUserAcciones = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_McDonalds").innerHTML));
+                document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
+                console.log(">>>> revento McDonals ");
+            }
+        }
+    }
 
-	if (_valorHeineken > 2500 ) {
+    if (_valorNike > 2500) {
+        _valorReventada = _valorNike - 2500;
+        _valorNike = 2500;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                _auxUserCash = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML));
+                _auxUserAcciones = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Nike").innerHTML));
+                document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
+                console.log(">>>> revento Nike ");
+            }
+        }
+    }
 
-		_valorReventada = _valorHeineken - 2500 ;
-		_valorHeineken = 2500 ;		
+    // ========== QUIEBRA (mínimo 100) ==========
+    if (_valorHeineken < 100) {
+        _valorHeineken = 100;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                document.getElementById("Jugador" + String(i + 1) + "_Heineken").innerHTML = 0;
+            }
+        }
+    }
 
-		for (var i=0;i<4;i++) {
+    if (_valorGatorade < 100) {
+        _valorGatorade = 100;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                document.getElementById("Jugador" + String(i + 1) + "_Gatorade").innerHTML = 0;
+            }
+        }
+    }
 
-			if (_jugadores[i][0] != "Sin Asignar") {
+    if (_valorMcDonalds < 100) {
+        _valorMcDonalds = 100;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                document.getElementById("Jugador" + String(i + 1) + "_McDonalds").innerHTML = 0;
+            }
+        }
+    }
 
-				_auxUserCash = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML));				
-				_auxUserAcciones = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Heineken").innerHTML)); 
-				document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
-				console.log(">>>> revento Heineken ")
+    if (_valorNike < 100) {
+        _valorNike = 100;
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] != "Sin Asignar") {
+                document.getElementById("Jugador" + String(i + 1) + "_Nike").innerHTML = 0;
+            }
+        }
+    }
 
-			}
+    debugBws(" TERMINE >>>>>> Calculo de TOPES ");
 
-		}
-	}
+    // --- Calcular totales después de las modificaciones (necesario para verificar quiebra de banca)
+    calcularTotalJugadores();
 
-	if (_valorGatorade > 2500 ) {
+    // --- Verificar si algún jugador se quedó sin dinero y sin acciones (quiebra de banca)
+    var hayQuiebraBanca = false;
+    var totalesAntes = [];
 
-		_valorReventada = _valorGatorade - 2500 ;
-		_valorGatorade = 2500 ;
+    for (var i = 0; i < 4; i++) {
+        if (_jugadores[i][0] !== "Sin Asignar") {
+            var cash = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML));
+            var h = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Heineken").innerHTML));
+            var g = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Gatorade").innerHTML));
+            var n = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Nike").innerHTML));
+            var m = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_McDonalds").innerHTML));
+            var total = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Total").innerHTML));
+            totalesAntes.push({ idx: i, nombre: _jugadores[i][0], total: total, cash: cash, h: h, g: g, n: n, m: m });
 
-		for (var i=0;i<4;i++) {
+            if (cash === 0 && h === 0 && g === 0 && n === 0 && m === 0) {
+                hayQuiebraBanca = true;
+            }
+        }
+    }
 
-			if (_jugadores[i][0] != "Sin Asignar") {
+    if (hayQuiebraBanca) {
+        console.log("QUIEBRA DE BANCA DETECTADA");
+        window._gameOver = true; // Marcar juego terminado
 
-				_auxUserCash = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML));				
-				_auxUserAcciones = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Gatorade").innerHTML)); 		
-				document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
-				console.log(">>>> revento Gatorade  ")
-			}
+        // Guardar pérdidas (totales antes de limpiar)
+        var perdedores = [];
+        for (var i = 0; i < totalesAntes.length; i++) {
+            if (totalesAntes[i].total > 0) {
+                perdedores.push({
+                    nombre: totalesAntes[i].nombre,
+                    perdida: totalesAntes[i].total
+                });
+            }
+        }
 
-		}
+        // Limpiar todo el capital de TODOS los jugadores (cash y acciones)
+        for (var i = 0; i < 4; i++) {
+            if (_jugadores[i][0] !== "Sin Asignar") {
+                document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML = "0";
+                document.getElementById("Jugador" + String(i + 1) + "_Heineken").innerHTML = "0";
+                document.getElementById("Jugador" + String(i + 1) + "_Gatorade").innerHTML = "0";
+                document.getElementById("Jugador" + String(i + 1) + "_Nike").innerHTML = "0";
+                document.getElementById("Jugador" + String(i + 1) + "_McDonalds").innerHTML = "0";
+            }
+        }
 
-	}
+        // Recalcular totales después de limpiar (todos serán 0)
+        calcularTotalJugadores();
 
-	if (_valorMcDonalds > 2500 ) {
-
-		_valorReventada = _valorMcDonalds - 2500 ;
-		_valorMcDonalds = 2500 ;
-
-		for (var i=0;i<4;i++) {
-
-			if (_jugadores[i][0] != "Sin Asignar") {
-
-				_auxUserCash = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML));				
-				_auxUserAcciones = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_McDonalds").innerHTML)); 
-				document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
-				console.log(">>>> revento McDonals ")
-			}
-
-		}
-	}
-
-	if (_valorNike > 2500 ) {
-
-		_valorReventada = _valorNike - 2500 ;
-		_valorNike = 2500 ;
-
-		for (var i=0;i<4;i++) {
-
-			if (_jugadores[i][0] != "Sin Asignar") {
-
-				_auxUserCash = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML));				
-				_auxUserAcciones = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Nike").innerHTML)); 
-				document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML = num2Format(_auxUserCash + (_auxUserAcciones * _valorReventada));
-				console.log(">>>> revento Nike ")
-			}
-
-		}
-
-	}
-
-	// Quiebra 
-
-	if (_valorHeineken < 100 ) {
-
-		_valorHeineken = 100 ;
-
-		for (var i=0;i<4;i++) {
-
-			if (_jugadores[i][0] != "Sin Asignar") {
-
-				document.getElementById("Jugador"+String(i+1)+"_Heineken").innerHTML = 0;
-//				console.log(">>>> quebro Heineken ")
-			}
-
-		}
-
-
-	}
-
-	if (_valorGatorade < 100 ) {
-
-		_valorGatorade = 100 ;
-
-		for (var i=0;i<4;i++) {
-
-			if (_jugadores[i][0] != "Sin Asignar") {
-
-				document.getElementById("Jugador"+String(i+1)+"_Gatorade").innerHTML = 0;
-//				console.log(">>>> quebro Gatorade ")
-			}
-
-		}
-
-	}
-
-	if (_valorMcDonalds < 100 ) {
-
-		_valorMcDonalds = 100 ;
-
-		for (var i=0;i<4;i++) {
-
-			if (_jugadores[i][0] != "Sin Asignar") {
-
-				document.getElementById("Jugador"+String(i+1)+"_McDonalds").innerHTML = 0;
-//				console.log(">>>> quebro McDonalds ")
-			}
-
-		}
-	}
-
-	if (_valorNike < 100 ) {
-
-		_valorNike = 100 ;
-
-		for (var i=0;i<4;i++) {
-
-			if (_jugadores[i][0] != "Sin Asignar") {
-
-				document.getElementById("Jugador"+String(i+1)+"_Nike").innerHTML = 0;
-//				console.log(">>>> quebro Nike ")
-			}
-
-		}
-	}
-
-	debugBws(" TERMINE >>>>>> Calculo de TOPES ")	;
-
-	calcularTotalJugadores();
-
+        // Emitir evento gameOver para todos los clientes
+        socket.emit('gameOver', {
+            type: 'bankruptcy',
+            perdedores: perdedores
+        });
+        return; // Detener la ejecución para no seguir con el turno
+    }
 }
 
 //---------------------------------- Limpiar los valores por cambio de combo -----------------------------//
@@ -2350,20 +2376,44 @@ function confirmarFinalizar() {
 
 function _ejecutarFinalizarJugada() {
     debugBws(" Boton Finalizar jugada / jugador ");
+    
     // 1. UI: Deshabilitamos el botón y reseteamos mazo
     document.getElementById("Finalizar").style = "background-color : grey;";
     document.getElementById("Finalizar").disabled = true;
     document.getElementById('CartaMaso').src = "_imagenes/CartaEjemploAtras.png";
     _jugarCartas = true;
+    
     // 2. Lógica de índices de cartas
     if (_jugoDeLaMano == false) {
         _valorIndice = _valorIndice + 1;
     }
     _valorIndiceGraficas = _valorIndiceGraficas + 1; 
     _jugoDeLaMano = false;
+    
+    // Verificar si se terminaron las cartas (GAME OVER)
     if (_valorIndice > 67) {    
         document.getElementById('CartaMaso').src = "_imagenes/MasoVacio.png";
+        
+        // Calcular el ganador (jugador con mayor TOTAL)
+        let ganador = "";
+        let mayorTotal = -1;
+        for (let i = 0; i < 4; i++) {
+            if (_jugadores[i][0] !== "Sin Asignar") {
+                const total = Number(format2Num(document.getElementById("Jugador" + (i+1) + "_Total").innerHTML));
+                if (total > mayorTotal) {
+                    mayorTotal = total;
+                    ganador = _jugadores[i][0];
+                }
+            }
+        }
+        // Emitir evento de game over al servidor para que lo propague a todos
+        socket.emit('gameOver', {
+            type: 'endOfDeck',
+            ganador: ganador
+        });
+        return; // No continuar con el turno porque el juego terminó
     }
+    
     document.getElementById('MInteractivoTituloMaso').innerHTML = "Movimientos : " + String(_valorIndice) + "/68";
     // 3. UI: Limpiamos los radios y mostramos cartas
     document.getElementById("M_Radio").disabled = false;
@@ -3161,6 +3211,90 @@ function seleccionarCombo(valor, texto) {
     document.getElementById('ComboBoxOptions').style.display = 'none';
     limpiarValoresInput();
 }
+
+// ============================================================
+// FUNCIONES PARA MODAL GAME OVER
+// ============================================================
+let gameOverModal = null;
+
+function mostrarGameOver(ganador) {
+    const modal = document.getElementById('ModalGameOver');
+    if (!modal) return;
+    
+    const titulo = document.getElementById('GameOverTitulo');
+    const subtitulo = document.getElementById('GameOverSubtitulo');
+    const contenido = document.getElementById('GameOverContenido');
+    
+    titulo.innerHTML = 'GAME OVER!';
+    subtitulo.innerHTML = 'FIN DEL JUEGO';
+    contenido.innerHTML = `<div style="font-size: 28px; color: #ffc107;">🏆 GANADOR 🏆</div><div style="font-size: 32px; margin-top: 10px;">${ganador}</div>`;
+    
+    modal.style.display = 'flex';
+    
+    // Centrar el contenedor arrastrable
+    const container = document.getElementById('GameOverContainer');
+    if (container) {
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.margin = '0';
+    }
+    
+    // Hacer arrastrable todo el modal
+    hacerDraggable(container, container);
+}
+
+function mostrarQuiebreBanca(perdedores) {
+    const modal = document.getElementById('ModalGameOver');
+    if (!modal) return;
+    
+    const titulo = document.getElementById('GameOverTitulo');
+    const subtitulo = document.getElementById('GameOverSubtitulo');
+    const contenido = document.getElementById('GameOverContenido');
+    
+    titulo.innerHTML = 'QUIEBRE COMPLETO BWS!';
+    subtitulo.innerHTML = 'Game Over';
+    
+    let html = '<div style="font-size: 28px; margin-bottom: 20px; color: #ffc107;">💸 PÉRDIDAS 💸</div>';
+    if (perdedores && perdedores.length > 0) {
+        perdedores.forEach(jugador => {
+            html += `<div style="font-size: 24px; margin: 8px 0;">${jugador.nombre}: - $${jugador.perdida.toLocaleString()}</div>`;
+        });
+    } else {
+        html += '<div style="font-size: 24px;">No hay pérdidas registradas.</div>';
+    }
+    contenido.innerHTML = html;
+    
+    modal.style.display = 'flex';
+    
+    const container = document.getElementById('GameOverContainer');
+    if (container) {
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.margin = '0';
+    }
+    hacerDraggable(container, container);
+}
+
 function cerrarHistorial() {
     document.getElementById('ModalHistorial').style.display = 'none';
 }
+
+// ============================================================
+// MANEJADOR DEL BOTÓN NEXT GAME
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('BtnNextGame');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            // Ocultar modal
+            const modal = document.getElementById('ModalGameOver');
+            if (modal) modal.style.display = 'none';
+            // Resetear bandera de game over
+            _gameOver = false;
+            // Enviar evento al servidor para reiniciar la partida
+            socket.emit('resetGame');
+        });
+    }
+});
