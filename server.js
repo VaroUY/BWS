@@ -1,5 +1,3 @@
-
-
 //----------------------------------------------------------------------------------------------------------------//
 //---------------------------------------- server para BWS by Varo -----------------------------------------------//
 //----------------------------------------------------------------------------------------------------------------//
@@ -145,6 +143,14 @@ let estadoJuego = {
         timeoutId: null
     },
 
+    // Última dirección de cambio por empresa (1=subió, -1=bajó, 0=sin cambio)
+    ultimaDireccion: {
+        heineken: 0,
+        gatorade: 0,
+        nike: 0,
+        mcdonalds: 0
+    },
+
     historial: [],
 
     logEmpresas: {
@@ -162,6 +168,58 @@ let estadoJuego = {
         j4: [4000]
     }
 };
+
+// ==================== FUNCIÓN PARA OBTENER COPIA SEGURA (SIN REFERENCIAS CIRCULARES) ====================
+function obtenerEstadoParaCliente() {
+    // Copia superficial de las partes que no contienen objetos circulares
+    const estadoCopia = {
+        precios: { ...estadoJuego.precios },
+        entorno: { ...estadoJuego.entorno },
+        jugadores: estadoJuego.jugadores.map(j => ({
+            id: j.id,
+            nombre: j.nombre,
+            cash: j.cash,
+            h: j.h,
+            n: j.n,
+            g: j.g,
+            m: j.m,
+            socketId: j.socketId,
+            c1: j.c1,
+            c2: j.c2,
+            c3: j.c3,
+            c4: j.c4
+        })),
+        masoCartas: estadoJuego.masoCartas,
+        ultimaDireccion: { ...estadoJuego.ultimaDireccion },
+        historial: estadoJuego.historial,
+        logEmpresas: {
+            heineken: [...estadoJuego.logEmpresas.heineken],
+            gatorade: [...estadoJuego.logEmpresas.gatorade],
+            nike: [...estadoJuego.logEmpresas.nike],
+            mcdonalds: [...estadoJuego.logEmpresas.mcdonalds],
+            labels: [...estadoJuego.logEmpresas.labels]
+        },
+        logJugadores: {
+            j1: [...estadoJuego.logJugadores.j1],
+            j2: [...estadoJuego.logJugadores.j2],
+            j3: [...estadoJuego.logJugadores.j3],
+            j4: [...estadoJuego.logJugadores.j4]
+        },
+        votacion: {
+            activa: estadoJuego.votacion.activa,
+            opciones: [...estadoJuego.votacion.opciones]
+            // NO incluimos timeoutId
+        }
+    };
+    // Si hay cartasTemporales en algún jugador, copiarlas (son arrays de cartas, serializables)
+    estadoJuego.jugadores.forEach((j, idx) => {
+        if (j.cartasTemporales) {
+            estadoCopia.jugadores[idx].cartasTemporales = j.cartasTemporales.map(c => [...c]); // copia de cada carta
+        }
+    });
+    return estadoCopia;
+}
+// =========================================================================================================
 
 // ----------------------------------------------------------------------------------- //
 // ---------------------------------- FUNCIONES DEL SERVIDOR ------------------------- //
@@ -229,29 +287,36 @@ function iniciarFaseVotacion() {
 }
 
 // Función para procesar los votos después de que todos hayan votado o por timeout
+// Coloca esto después de la función iniciarFaseVotacion y antes de io.on('connection', ...)
+
 function procesarVotos() {
     if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
     estadoJuego.votacion.activa = false;
 
-    // Obtener los índices de jugadores activos
     const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
     const indicesActivos = [];
     estadoJuego.jugadores.forEach((j, idx) => {
         if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
     });
 
-    // Verificar si algún jugador eligió "Me quedo" (opción 1)
     const algunMeQuedo = indicesActivos.some(idx => estadoJuego.votacion.opciones[idx] === 1);
 
     if (algunMeQuedo) {
         console.log("Algún jugador eligió 'Me quedo'. Iniciando partida con manos actuales.");
-        // Iniciar la partida normal con las manos ya repartidas
-        io.emit('partidaListaParaEmpezar', estadoJuego);
+        const estadoParaEnviar = obtenerEstadoParaCliente();
+        estadoParaEnviar.manos = {};
+        for (let i = 0; i < indicesActivos.length; i++) {
+            const jugadorIdx = indicesActivos[i];
+            estadoParaEnviar.manos[jugadorIdx] = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
+        }
+        for (let i = 0; i < indicesActivos.length; i++) {
+            delete estadoJuego.jugadores[indicesActivos[i]].cartasTemporales;
+        }
+        juegoEnCurso = true;
+        io.emit('partidaListaParaEmpezar', estadoParaEnviar);
     } else {
-        console.log("Nadie eligió 'Me quedo'. Reordenando el mazo y repartiendo nuevas cartas.");
-        // Mezclar el mazo actual nuevamente (reordenar)
+        console.log("Nadie eligió 'Me quedo'. Reordenando mazo y repartiendo nuevas manos.");
         estadoJuego.masoCartas = entreverarMazo(estadoJuego.masoCartas);
-        // Repartir las primeras 16 cartas como nuevas manos
         const nuevasCartas = estadoJuego.masoCartas.slice(0, 16);
         for (let i = 0; i < indicesActivos.length; i++) {
             const jugadorIdx = indicesActivos[i];
@@ -259,13 +324,7 @@ function procesarVotos() {
             const cartasJugador = nuevasCartas.slice(offset, offset + 4);
             estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasJugador;
         }
-        // Ahora iniciar la partida con las nuevas manos
-        io.emit('partidaListaParaEmpezar', estadoJuego);
-    }
-
-    // Limpiar datos temporales de cartas en los jugadores (opcional)
-    for (let i = 0; i < indicesActivos.length; i++) {
-        delete estadoJuego.jugadores[indicesActivos[i]].cartasTemporales;
+        iniciarFaseVotacion();
     }
 }
 // ----------------------------------------------------------------------------------- //
@@ -275,6 +334,7 @@ function procesarVotos() {
 let usuariosConectados = {};
 // NUEVA variable para saber si el Host ya arrancó el juego
 let partidaIniciada = false;
+let juegoEnCurso = false;
 
 io.on('connection', (socket) => {
     
@@ -298,11 +358,12 @@ io.on('connection', (socket) => {
         // CASO A: La partida ya está en curso (Reconexión o entrada tardía)
         console.log('Usuario entra con partida en curso. Enviando selector de personajes.');
         
-        // 1. Le enviamos el estado actual para que su tablero tenga los datos técnicos
-        socket.emit('actualizarCliente', estadoJuego);
+        // 1. Le enviamos el estado actual para que su tablero tenga los datos técnicos (copia segura)
+        socket.emit('actualizarCliente', obtenerEstadoParaCliente());
         
         // 2. Le abrimos el modal de selección para que elija su nombre (asiento con socketId: null)
-        socket.emit('abrirSeleccionPersonaje', estadoJuego.jugadores);
+        const jugadoresCopia = JSON.parse(JSON.stringify(estadoJuego.jugadores));
+        socket.emit('abrirSeleccionPersonaje', jugadoresCopia);
 
     } else {
         // CASO B: La partida aún no ha comenzado (Fase de Lobby)
@@ -350,14 +411,14 @@ socket.on('configurarNombresPartida', (nombresRecibidos) => {
     });
     // 3. Marcamos que la partida ya tiene configuración
     partidaIniciada = true;
-    // 4. Avisamos a TODOS enviando la tabla de OBJETOS para armar el modal
-    io.emit('abrirSeleccionPersonaje', estadoJuego.jugadores);
+    // 4. Avisamos a TODOS enviando la tabla de OBJETOS para armar el modal (copia profunda)
+    const jugadoresCopia = JSON.parse(JSON.stringify(estadoJuego.jugadores));
+    io.emit('abrirSeleccionPersonaje', jugadoresCopia);
 });
 
     // --- EL USUARIO ELIGIÓ SU NOMBRE Y si todos lo hicieron comienza  ---
 socket.on('usuarioEligioNombre', (indice) => {
-
-    // Liberamos cualquier asiento anterior que tenga este mismo socket
+    // Liberar asiento anterior del mismo socket
     estadoJuego.jugadores.forEach((j, i) => {
         if (j.socketId === socket.id && i !== indice) {
             console.log(`Liberando asiento anterior ${i} del socket ${socket.id}`);
@@ -365,7 +426,6 @@ socket.on('usuarioEligioNombre', (indice) => {
         }
     });
 
-    // Asignamos el nuevo asiento
     if (estadoJuego.jugadores[indice]) {
         estadoJuego.jugadores[indice].socketId = socket.id;
         console.log(`Asiento ${indice} ocupado por: ${estadoJuego.jugadores[indice].nombre} (ID: ${socket.id})`);
@@ -374,88 +434,101 @@ socket.on('usuarioEligioNombre', (indice) => {
     const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
     const todosListos = jugadoresActivos.every(j => j.socketId !== null);
 
-    if (todosListos && jugadoresActivos.length > 0) {
-        if (estadoJuego.entorno.IndiceJuego > 0 || estadoJuego.entorno.TurnoJugador > 0 || estadoJuego.entorno.cartaJugada === true) {
-            // Es una reconexión — mandamos estado actual solo a este jugador
-            console.log("Reconexión detectada. Enviando estado actual al jugador...");
-            socket.emit('reconectarJugador', {
-                estadoJuego: estadoJuego,
-                miIndice: indice
+    // ========== NUEVA LÓGICA PARA VOTACIÓN ==========
+    // Si la votación está activa y el jugador que se conecta es parte de la partida
+    if (estadoJuego.votacion.activa && estadoJuego.jugadores[indice].nombre !== "Sin Asignar") {
+        // Reiniciar su voto (si había votado antes de desconectarse)
+        estadoJuego.votacion.opciones[indice] = null;
+        // Obtener sus cartas temporales (guardadas en cartasTemporales durante iniciarFaseVotacion)
+        const cartas = estadoJuego.jugadores[indice].cartasTemporales;
+        if (cartas && cartas.length === 4) {
+            console.log(`Reenviando modal de votación al jugador ${indice} (reconexión en votación)`);
+            socket.emit('solicitarOpcionCartas', {
+                cartas: cartas,
+                tiempoLimite: 120
             });
         } else {
-            // Todos listos — iniciamos la fase de votación de cartas
+            console.log(`No se encontraron cartas temporales para jugador ${indice} durante votación.`);
+            // Si por algún motivo no tiene cartas, no hacemos nada (quizás ya terminó la votación)
+        }
+        // No hacemos nada más (no emitimos abrirSeleccionPersonaje, ni avanzamos votación)
+        return;
+    }
+    // ==============================================
+
+    if (juegoEnCurso) {
+        console.log("Reconexión a partida en curso. Enviando estado actual al jugador...");
+        const estadoCopia = obtenerEstadoParaCliente();
+        socket.emit('reconectarJugador', {
+            estadoJuego: estadoCopia,
+            miIndice: indice
+        });
+    } else {
+        if (todosListos && jugadoresActivos.length > 0) {
             console.log("Todos listos. Iniciando fase de votación...");
             iniciarFaseVotacion();
+        } else {
+            // Copia profunda del array de jugadores para evitar referencias circulares
+            const jugadoresCopia = JSON.parse(JSON.stringify(estadoJuego.jugadores));
+            io.emit('abrirSeleccionPersonaje', jugadoresCopia);
         }
-    } else {
-        // No están todos listos — actualizamos el modal de selección a todos
-        io.emit('abrirSeleccionPersonaje', estadoJuego.jugadores);
     }
 });
 
-// Función para iniciar la fase de votación de cartas iniciales
-
 
 // Función para procesar los votos después de que todos hayan votado o por timeout
-function procesarVotos() {
-    if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
-    estadoJuego.votacion.activa = false;
-
-    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
-    const indicesActivos = [];
-    estadoJuego.jugadores.forEach((j, idx) => {
-        if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
-    });
-
-    const algunMeQuedo = indicesActivos.some(idx => estadoJuego.votacion.opciones[idx] === 1);
-
-    if (algunMeQuedo) {
-        console.log("Algún jugador eligió 'Me quedo'. Iniciando partida con manos actuales.");
-        // Preparar el objeto con las manos para enviar a los clientes
-        const estadoParaEnviar = { ...estadoJuego };
-        estadoParaEnviar.manos = {};
-        for (let i = 0; i < indicesActivos.length; i++) {
-            const jugadorIdx = indicesActivos[i];
-            estadoParaEnviar.manos[jugadorIdx] = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
-        }
-        // Limpiar datos temporales
-        for (let i = 0; i < indicesActivos.length; i++) {
-            delete estadoJuego.jugadores[indicesActivos[i]].cartasTemporales;
-        }
-        io.emit('partidaListaParaEmpezar', estadoParaEnviar);
-    } else {
-        console.log("Nadie eligió 'Me quedo'. Reordenando mazo y repartiendo nuevas manos.");
-        // Mezclar el mazo actual nuevamente
-        estadoJuego.masoCartas = entreverarMazo(estadoJuego.masoCartas);
-        // Repartir nuevas 16 cartas
-        const nuevasCartas = estadoJuego.masoCartas.slice(0, 16);
-        for (let i = 0; i < indicesActivos.length; i++) {
-            const jugadorIdx = indicesActivos[i];
-            const offset = i * 4;
-            const cartasJugador = nuevasCartas.slice(offset, offset + 4);
-            estadoJuego.jugadores[jugadorIdx].cartasTemporales = cartasJugador;
-        }
-        // Reiniciar la votación
-        iniciarFaseVotacion();
-    }
-}
 
 // --------------------------------------
 
 
     // B. ENVIAR ESTADO INICIAL
-    // Apenas entra, le damos la "foto" actual del juego para que no empiece en cero
-    socket.emit('actualizarCliente', estadoJuego);
+    // Apenas entra, le damos la "foto" actual del juego para que no empiece en cero (copia segura)
+    socket.emit('actualizarCliente', obtenerEstadoParaCliente());
 
 // ----------------------------------------
 // C. RECIBIR JUGADA DESDE UN CLIENTE
 
 socket.on('enviarJugadaAlServidor', (datosRecibidos) => {
     console.log('--- Recibiendo actualización de datos del juego ---');
+
+    // Guardar precios anteriores para calcular cambios
+    const preciosAnteriores = {
+        heineken: estadoJuego.precios.heineken,
+        gatorade: estadoJuego.precios.gatorade,
+        nike: estadoJuego.precios.nike,
+        mcdonalds: estadoJuego.precios.mcdonalds
+    };
+
+    // Actualizar precios con los nuevos
     estadoJuego.precios = datosRecibidos.precios;
     estadoJuego.entorno.IndiceJuego = datosRecibidos.entorno.IndiceJuego;
     estadoJuego.entorno.TurnoJugador = datosRecibidos.entorno.TurnoJugador;
     estadoJuego.entorno.cartaJugada = datosRecibidos.entorno.cartaJugada;
+
+    // Calcular nueva dirección
+    const nuevaDireccion = {
+        heineken: Math.sign(estadoJuego.precios.heineken - preciosAnteriores.heineken),
+        gatorade: Math.sign(estadoJuego.precios.gatorade - preciosAnteriores.gatorade),
+        nike:     Math.sign(estadoJuego.precios.nike - preciosAnteriores.nike),
+        mcdonalds: Math.sign(estadoJuego.precios.mcdonalds - preciosAnteriores.mcdonalds)
+    };
+
+    // Solo actualizar ultimaDireccion si hubo algún cambio real
+    let huboCambio = false;
+    for (let empresa in nuevaDireccion) {
+        if (nuevaDireccion[empresa] !== 0) {
+            huboCambio = true;
+            break;
+        }
+    }
+    if (huboCambio) {
+        estadoJuego.ultimaDireccion = nuevaDireccion;
+    }
+    // Si no hubo cambio, se mantiene la dirección anterior (no se modifica)
+
+    console.log('ultimaDireccion después de la actualización:', estadoJuego.ultimaDireccion); 
+
+    // Actualizar jugadores
     datosRecibidos.jugadores.forEach((jugCliente, index) => {
         if (estadoJuego.jugadores[index]) {
             estadoJuego.jugadores[index].nombre = jugCliente.nombre;
@@ -470,14 +543,17 @@ socket.on('enviarJugadaAlServidor', (datosRecibidos) => {
             if (jugCliente.c4 !== undefined) estadoJuego.jugadores[index].c4 = jugCliente.c4;
         }
     });
-    // Actualizamos logs de graficas si vienen
+
+    // Actualizar logs
     if (datosRecibidos.logEmpresas) {
         estadoJuego.logEmpresas = datosRecibidos.logEmpresas;
     }
     if (datosRecibidos.logJugadores) {
         estadoJuego.logJugadores = datosRecibidos.logJugadores;
     }
-    io.emit('actualizarCliente', estadoJuego);
+
+    // Enviar a todos los clientes (incluye ultimaDireccion) - copia segura
+    io.emit('actualizarCliente', obtenerEstadoParaCliente());
 });
 
 // --- ACCIÓN Alguien tiró una carta del maso  ---
@@ -489,7 +565,7 @@ socket.on('seJugoCartaDelMaso', (indiceParametro) => {
     // Guardamos el índice de la carta jugada para que todos la vean
     estadoJuego.entorno.cartaActual = indiceParametro;
     // Avisamos a todos con el estado actualizado incluyendo la carta
-    io.emit('actualizarCliente', estadoJuego);
+    io.emit('actualizarCliente', obtenerEstadoParaCliente());
     // Avisamos a los demás que ejecuten la carta visualmente
     socket.broadcast.emit('ejecutarMostrarCartaMaso', indiceParametro);
     // Mostramos modal de espera a los demas jugadores con la carta jugada
@@ -510,7 +586,7 @@ socket.on('actualizarCartasMano', (datos) => {
         estadoJuego.entorno.cartaJugada = true;
     }
     // Avisamos a todos para que actualicen los indicadores
-    io.emit('actualizarCliente', estadoJuego);
+    io.emit('actualizarCliente', obtenerEstadoParaCliente());
 });
 // ------------------------- cerrar modal que muestra carta jugada
 
@@ -646,11 +722,19 @@ socket.on('resetGame', () => {
             { id: 3, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
             { id: 4, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true }
         ],
-        masoCartas: cartasMaestroServer,
+        // ** Se mezcla el mazo actual para obtener un orden diferente en cada reinicio **
+        masoCartas: entreverarMazo([...cartasMaestroServer]),
         votacion: {
             activa: false,
             opciones: [null, null, null, null],
             timeoutId: null
+        },
+        // ** Añadido: dirección de cambio reiniciada a 0 para todas las empresas **
+        ultimaDireccion: {
+            heineken: 0,
+            gatorade: 0,
+            nike: 0,
+            mcdonalds: 0
         },
         historial: [],
         logEmpresas: {
@@ -670,11 +754,11 @@ socket.on('resetGame', () => {
 
     // Resetear variable de partida iniciada
     partidaIniciada = false;
+    juegoEnCurso = false;
 
     // Emitir a todos los clientes que reinicien la interfaz
     io.emit('resetCliente');
 });
-
 //-------------------------  D. DESCONEXIÓN
 
 socket.on('disconnect', () => {
@@ -692,6 +776,14 @@ socket.on('disconnect', () => {
 
     delete usuariosConectados[socket.id];
 
+    // Si estaba en fase de votación y ya había votado, limpiamos su voto
+    if (indiceDesconectado !== -1 && estadoJuego.votacion.activa) {
+        if (estadoJuego.votacion.opciones[indiceDesconectado] !== null) {
+            console.log(`Limpiando voto del jugador ${indiceDesconectado} (desconectado durante votación).`);
+            estadoJuego.votacion.opciones[indiceDesconectado] = null;
+        }
+    }
+
     // Si era su turno Y ya había jugado carta → forzamos finalizar turno
     if (
         indiceDesconectado !== -1 &&
@@ -700,10 +792,8 @@ socket.on('disconnect', () => {
     ) {
         console.log(`Jugador ${estadoJuego.jugadores[indiceDesconectado].nombre} se desconectó tras jugar carta. Forzando fin de turno...`);
 
-        // Reseteamos carta jugada
         estadoJuego.entorno.cartaJugada = false;
 
-        // Calculamos próximo turno saltando Sin Asignar
         let proximoTurno = estadoJuego.entorno.TurnoJugador;
         let encontrado = false;
         while (!encontrado) {
@@ -726,14 +816,6 @@ socket.on('disconnect', () => {
     }
 });
 });
-
-// INICIO DEL SERVIDOR
-//server.listen(3000, () => {
-//    console.log('**************************************************');
-//    console.log('* SERVIDOR BWS LISTO EN PUERTO 3000              *');
-//    console.log('* Esperando jugadores...                         *');
-//    console.log('**************************************************');
-//});
 
 // INICIO DEL SERVIDOR
 const port = process.env.PORT || 3000;

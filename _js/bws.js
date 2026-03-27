@@ -24,6 +24,8 @@ var cartasMaestro = [];
 var _lineChartInstance = null;
 var _actualizarGrafica = false;
 var _gameOver = false; // Para evitar múltiples triggers
+var _ultimaDireccion = { heineken: 0, gatorade: 0, nike: 0, mcdonalds: 0 };
+
 
 // ---------------------------------------------------------------------------------------------//
 
@@ -219,6 +221,9 @@ socket.on('liberarTablero', () => {
 socket.on('abrirSeleccionPersonaje', (jugadoresServer) => {
     console.log("Abriendo selector de personaje...");
 
+  // Ocultar el preloader si está visible (para reconexiones)
+    ocultarPreloader();
+
     document.getElementById('ModalBackend').style.display = 'none';
     document.getElementById('ModalEspera').style.display = 'none';
 
@@ -389,37 +394,37 @@ socket.on('partidaListaParaEmpezar', (estadoRecibido) => {
 //--------------------------------
 
 socket.on('reconectarJugador', (data) => {
-    console.log("Reconectando jugador al índice: " + data.miIndice);
-    const estadoRecibido = data.estadoJuego;
-    _partidaYaInicializada = true;
-    document.getElementById('ModalSeleccionNombre').style.display = 'none';
-    miAsientoLocal = data.miIndice + 1;
-    console.log("Reconectado como Jugador " + miAsientoLocal);
-    _valorHeineken  = estadoRecibido.precios.heineken;
-    _valorGatorade  = estadoRecibido.precios.gatorade;
-    _valorNike      = estadoRecibido.precios.nike;
-    _valorMcDonalds = estadoRecibido.precios.mcdonalds;
-    _valorIndice    = estadoRecibido.entorno.IndiceJuego;
-    _turnoJugador   = estadoRecibido.entorno.TurnoJugador;
-    if (estadoRecibido.entorno.cartaJugada) {
-        _jugarCartas = false;
-        document.getElementById("Finalizar").style = "background-color: red;";
-        document.getElementById("Finalizar").disabled = false;
-        document.getElementById('CartaMaso').style.cursor = 'not-allowed';
-        document.getElementById('CartaMaso').onclick = null;
-    } else {
-        _jugarCartas = true;
-        document.getElementById("Finalizar").style = "background-color: grey;";
-        document.getElementById("Finalizar").disabled = true;
-        document.getElementById('CartaMaso').style.cursor = 'pointer';
-        document.getElementById('CartaMaso').onclick = function() { jugadaCartaDelMaso(); };
-    }
-    if (estadoRecibido.masoCartas) {
-        cartasMaestro = estadoRecibido.masoCartas;
-    }
+    try {
+        console.log("Reconectando jugador al índice: " + data.miIndice);
+        const estadoRecibido = data.estadoJuego;
+        _partidaYaInicializada = true;
+        document.getElementById('ModalSeleccionNombre').style.display = 'none';
+        miAsientoLocal = data.miIndice + 1;
+        console.log("Reconectado como Jugador " + miAsientoLocal);
+        _valorHeineken  = estadoRecibido.precios.heineken;
+        _valorGatorade  = estadoRecibido.precios.gatorade;
+        _valorNike      = estadoRecibido.precios.nike;
+        _valorMcDonalds = estadoRecibido.precios.mcdonalds;
+        _valorIndice    = estadoRecibido.entorno.IndiceJuego;
+        _turnoJugador   = estadoRecibido.entorno.TurnoJugador;
+        if (estadoRecibido.entorno.cartaJugada) {
+            _jugarCartas = false;
+            document.getElementById("Finalizar").style = "background-color: red;";
+            document.getElementById("Finalizar").disabled = false;
+            document.getElementById('CartaMaso').style.cursor = 'not-allowed';
+            document.getElementById('CartaMaso').onclick = null;
+        } else {
+            _jugarCartas = true;
+            document.getElementById("Finalizar").style = "background-color: grey;";
+            document.getElementById("Finalizar").disabled = true;
+            document.getElementById('CartaMaso').style.cursor = 'pointer';
+            document.getElementById('CartaMaso').onclick = function() { jugadaCartaDelMaso(); };
+        }
+        if (estadoRecibido.masoCartas) {
+            cartasMaestro = estadoRecibido.masoCartas;
+        }
 
-    //--- ** DEEPSEEK: Precargar imágenes antes de continuar
-    precargarImagenesDeCartas(cartasMaestro, () => {
+        // Actualizar la UI directamente sin precargar todas las cartas (ya están en caché)
         estadoRecibido.jugadores.forEach((jugServ, index) => {
             let num = index + 1;
             if (jugServ.nombre !== "Sin Asignar") {
@@ -456,16 +461,13 @@ socket.on('reconectarJugador', (data) => {
         actualizarIndicadoresCartas();
         iniciarTimerTurno();
 
+    } catch (error) {
+        console.error("Error en reconexión:", error);
+    } finally {
         ocultarPreloader();
+    }
 
- //       if (window._rolRecibido === 'host') {
- //           document.getElementById('ModalBackend').style.display = 'flex';
- //       } else if (window._rolRecibido === 'espera') {
- //           document.getElementById('ModalEspera').style.display = 'flex';
- //       }
-        console.log("Reconexión completada. Turno actual: " + turnoActual);
-
-    });
+    console.log("Reconexión completada.");
 });
 // --------------------------------- manejo de turnos en el socket ------------------------
 
@@ -545,6 +547,11 @@ socket.on('actualizarCliente', (estadoJuegoServidor) => {
     setCotizacion('ValorGatorade',  _valorGatorade);
     setCotizacion('ValorMcDonalds', _valorMcDonalds);
     setCotizacion('ValorNike',      _valorNike);
+
+    // --- ** DEEPSEEK: Actualizar dirección de cambio desde el servidor **
+    if (estadoJuegoServidor.ultimaDireccion) {
+        _ultimaDireccion = estadoJuegoServidor.ultimaDireccion;
+    }
 
     estadoJuegoServidor.jugadores.forEach((jugadorServer, index) => {
         if (jugadorServer.nombre !== "Sin Asignar") {
@@ -674,8 +681,8 @@ function crearModalVotacion() {
     modal.innerHTML = `
         <div class="bws-modal-up" style="background: #000000; border: 1px solid #5b2d8e; border-radius: 14px; padding: 28px 32px; width: 560px; text-align: center; box-shadow: 0 0 40px rgba(168,85,247,0.2);">
             <div style="width:160px; height:2px; background:linear-gradient(90deg, transparent, #a855f7, transparent); margin: 0 auto 16px auto;"></div>
-            <h2 style="color: #ffffff; font-family: 'Rajdhani', sans-serif; font-size: 20px; letter-spacing: 3px;">ELIGE TU POSTURA</h2>
-            <p style="color: #a855f7; font-size: 11px; letter-spacing: 2px; margin-bottom: 16px;">MIRA TUS CARTAS Y DECIDE</p>
+            <h2 style="color: #ffffff; font-family: 'Rajdhani', sans-serif; font-size: 20px; letter-spacing: 3px;">ESTAS SON TUS CARTAS DE JUEGO</h2>
+            <p style="color: #a855f7; font-size: 11px; letter-spacing: 2px; margin-bottom: 16px;">VOTA POR SI TE LAS QUIERES QUEDAR O CAMBIARLAS</p>
             <div id="cartasVotacion" style="display: flex; justify-content: center; gap: 10px; margin: 20px 0;"></div>
             <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
                 <button id="votarQuedo" style="background: #28a745; color: white; border: none; border-radius: 8px; padding: 10px 24px; font-weight: bold; cursor: pointer;">ME QUEDO</button>
@@ -684,6 +691,19 @@ function crearModalVotacion() {
             </div>
             <p id="tiempoRestanteVotacion" style="color: #8ca0b8; font-family: 'Share Tech Mono', monospace; font-size: 14px; margin-top: 12px;">Tiempo restante: 02:00</p>
             <div id="mensajeEsperaVotacion" style="display: none; color: #a855f7; font-size: 12px; margin-top: 12px;">Esperando a los demás jugadores...</div>
+            
+            <!-- NUEVO TEXTO EXPLICATIVO CON ICONO -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 8px 12px; background: rgba(168,85,247,0.08); border-radius: 12px; border: 1px solid rgba(168,85,247,0.2);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2v20M2 12h20" stroke="#a855f7" stroke-width="1.2" stroke-linecap="round"/>
+                    <circle cx="12" cy="12" r="9" stroke="#a855f7" stroke-width="1.2"/>
+                    <path d="M12 8v4l2 2" stroke="#a855f7" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                <p style="color: #8ca0b8; font-size: 11px; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; margin: 0; line-height: 1.4;">
+                    * Regla de votación: con que un usuario se quede, la partida comenzará.<br>
+                    "Todo puede pasar" se abstiene de votar. Si el tiempo se vence, se tomará como voto "Todo puede pasar".
+                </p>
+            </div>
             <div style="width:100px; height:1px; background:linear-gradient(90deg, transparent, #5b2d8e, transparent); margin: 16px auto 0 auto;"></div>
         </div>
     `;
@@ -1686,36 +1706,62 @@ function ejecutarMovimientosUser() {
 
 function calcularTotalJugadores() {
 
-	debugBws(" Calcular Totales Jugadores ")	;
+    debugBws(" Calcular Totales Jugadores ");
 
-	var _userTotal ;
+    var _userTotal;
 
-	for ( var i=0;i<_jugadores.length; i++) {
+    for (var i = 0; i < _jugadores.length; i++) {
 
-		if (_jugadores[i][0]!="Sin Asignar" ) {
+        if (_jugadores[i][0] != "Sin Asignar") {
 
-			_userTotal = Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Cash").innerHTML));
-			_userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Heineken").innerHTML) * _valorHeineken ));
-			_userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_McDonalds").innerHTML) * _valorMcDonalds ));
-			_userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Nike").innerHTML) * _valorNike ));
-			_userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Gatorade").innerHTML) * _valorGatorade ));
+            _userTotal = Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Cash").innerHTML));
+            _userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Heineken").innerHTML) * _valorHeineken));
+            _userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_McDonalds").innerHTML) * _valorMcDonalds));
+            _userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Nike").innerHTML) * _valorNike));
+            _userTotal = _userTotal + (Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Gatorade").innerHTML) * _valorGatorade));
 
-			document.getElementById("Jugador"+String(i+1)+"_Total").innerHTML = num2Format(_userTotal);
+            document.getElementById("Jugador" + String(i + 1) + "_Total").innerHTML = num2Format(_userTotal);
 
-			document.getElementById("Jugador"+String(i+1)+"_V_Heineken").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Heineken").innerHTML)) * _valorHeineken ));
-			document.getElementById("Jugador"+String(i+1)+"_V_McDonalds").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_McDonalds").innerHTML)) * _valorMcDonalds ));
-			document.getElementById("Jugador"+String(i+1)+"_V_Nike").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Nike").innerHTML)) * _valorNike ));
-			document.getElementById("Jugador"+String(i+1)+"_V_Gatorade").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador"+String(i+1)+"_Gatorade").innerHTML)) * _valorGatorade ));
+            document.getElementById("Jugador" + String(i + 1) + "_V_Heineken").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Heineken").innerHTML)) * _valorHeineken));
+            document.getElementById("Jugador" + String(i + 1) + "_V_McDonalds").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_McDonalds").innerHTML)) * _valorMcDonalds));
+            document.getElementById("Jugador" + String(i + 1) + "_V_Nike").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Nike").innerHTML)) * _valorNike));
+            document.getElementById("Jugador" + String(i + 1) + "_V_Gatorade").innerHTML = num2Format((Number(format2Num(document.getElementById("Jugador" + String(i + 1) + "_Gatorade").innerHTML)) * _valorGatorade));
 
+            // --- CÁLCULO DE RESULTADO (diferencia del total) ---
+            var totalActual = _userTotal;
+            var totalAnterior = 0;
 
+            // Obtener total anterior desde los logs según el índice
+            switch (i) {
+                case 0: totalAnterior = _logJugador_1[_valorIndiceGraficas - 1] !== undefined ? _logJugador_1[_valorIndiceGraficas - 1] : 0; break;
+                case 1: totalAnterior = _logJugador_2[_valorIndiceGraficas - 1] !== undefined ? _logJugador_2[_valorIndiceGraficas - 1] : 0; break;
+                case 2: totalAnterior = _logJugador_3[_valorIndiceGraficas - 1] !== undefined ? _logJugador_3[_valorIndiceGraficas - 1] : 0; break;
+                case 3: totalAnterior = _logJugador_4[_valorIndiceGraficas - 1] !== undefined ? _logJugador_4[_valorIndiceGraficas - 1] : 0; break;
+            }
 
-		}
+            var diff = totalActual - totalAnterior;
+            var celdaResultado = document.getElementById("Jugador" + String(i + 1) + "_V_Cash");
 
-	}
+            if (celdaResultado) {
+                if (diff > 0) {
+                    celdaResultado.innerHTML = "▲ " + num2Format(diff);
+                    celdaResultado.style.color = "#a855f7";
+                } else if (diff < 0) {
+                    celdaResultado.innerHTML = "▼ " + num2Format(Math.abs(diff));
+                    celdaResultado.style.color = "#a855f7";
+                } else {
+                    celdaResultado.innerHTML = "0";
+                    celdaResultado.style.color = "#a855f7";
+                }
+            }
+        } else {
+            // Para asientos sin jugador, limpiar la celda
+            var celdaVacia = document.getElementById("Jugador" + String(i + 1) + "_V_Cash");
+            if (celdaVacia) celdaVacia.innerHTML = ".";
+        }
+    }
 
-		debugBws("Realizo los calculos de todos los jugadores en la lista ")	;
-
-
+    debugBws("Realizo los calculos de todos los jugadores en la lista ");
 }
 
 //---------------------------------- JUGADA CARTAS DE MASO --------------------------//
@@ -1727,7 +1773,17 @@ function jugadaCartaDelMaso() {
         _jugarCartas = false;
         if (_valorIndice > 67) {
             document.getElementById('CartaMaso').src = "_imagenes/MasoVacio.png";
-            alert("El juego ha finalizado");
+            // Deshabilitar mazo y cartas de mano
+            document.getElementById('CartaMaso').onclick = null;
+            document.getElementById('CartaMaso').style.cursor = 'not-allowed';
+            document.getElementById('CartaMaso1').onclick = null;
+            document.getElementById('CartaMaso2').onclick = null;
+            document.getElementById('CartaMaso3').onclick = null;
+            document.getElementById('CartaMaso4').onclick = null;
+            document.getElementById('CartaMaso1').style.cursor = 'not-allowed';
+            document.getElementById('CartaMaso2').style.cursor = 'not-allowed';
+            document.getElementById('CartaMaso3').style.cursor = 'not-allowed';
+            document.getElementById('CartaMaso4').style.cursor = 'not-allowed';
             return;
         }
         document.getElementById('CartaJugada').src = cartasMaestro[_valorIndice][2];
@@ -1736,7 +1792,17 @@ function jugadaCartaDelMaso() {
         socket.emit('mostrarCartaEspera', _valorIndice);
         jugarCartasCompletar(true, 0);
     } else {
-        alert("El jugador ya jugo su carta y no puede volver a jugar otra hasta su proximo turno ");
+        // Si ya jugó carta, deshabilitar mazo y cartas
+        document.getElementById('CartaMaso').onclick = null;
+        document.getElementById('CartaMaso').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso1').onclick = null;
+        document.getElementById('CartaMaso2').onclick = null;
+        document.getElementById('CartaMaso3').onclick = null;
+        document.getElementById('CartaMaso4').onclick = null;
+        document.getElementById('CartaMaso1').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso2').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso3').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso4').style.cursor = 'not-allowed';
     }
 }
 
@@ -1744,606 +1810,448 @@ function jugadaCartaDelMaso() {
 
 function terminarJugadaCartas(_empresaElegida,_valorIndiceINT) {
 
-debugBws(" Calculo final / Terminar Jugada - sin finalizar  ")	;
+debugBws(" Calculo final / Terminar Jugada - sin finalizar  ")  ;
+
+// --- NUEVO: Guardar totales antes de la jugada ---
+var totalesAntes = [];
+for (var i = 0; i < 4; i++) {
+    if (_jugadores[i][0] !== "Sin Asignar") {
+        var total = Number(format2Num(document.getElementById("Jugador" + (i+1) + "_Total").innerHTML));
+        totalesAntes[i] = total;
+    } else {
+        totalesAntes[i] = null;
+    }
+}
+// ---------------------------------------------
 
 // realizo la jugada 
-
-	switch (cartasMaestro[_valorIndiceINT][1]) {
-
-		case "N" :
-
-			switch (cartasMaestro[_valorIndiceINT][0]) {
-
-				case "1000" :
-
-					_valorNike = _valorNike + 1000;
-					_valorGatorade = _valorGatorade - 100;
-					_valorHeineken = _valorHeineken - 100;
-					_valorMcDonalds = _valorMcDonalds - 100;
-					break;
-
-				case "600" :
-
-					_valorNike = _valorNike + 600;
-
-					// determinar quein baja por el user
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade - 300;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken - 300;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds - 300;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-	
-				case "500" :
-
-					_valorNike = _valorNike - 500;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade + 600;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken + 600;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds + 600;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-
-	
-				case "x2" :
-
-					_valorNike = _valorNike * 2;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade /2 ;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken /2;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds /2;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-	
-				case "/2" :
-
-					_valorNike = _valorNike /2 ;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade * 2 ;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken * 2;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds * 2;
-							document.getElementById("N_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-		
-			}
-			break;
-
-		case "H" :
-
-			switch (cartasMaestro[_valorIndiceINT][0]) {
-
-				case "1000" :
-
-					_valorNike = _valorNike - 100;
-					_valorGatorade = _valorGatorade - 100;
-					_valorHeineken = _valorHeineken + 1000;
-					_valorMcDonalds = _valorMcDonalds - 100;
-					break;
-
-				case "600" :
-
-					_valorHeineken = _valorHeineken + 600;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade - 300;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike - 300;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds - 300;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-	
-				case "500" :
-
-					_valorHeineken = _valorHeineken - 500;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade + 600;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike + 600;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds + 600;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-	
-				case "x2" :
-
-					_valorHeineken = _valorHeineken * 2;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade /2 ;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike /2;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds /2;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-
-				case "/2" :
-
-					_valorHeineken = _valorHeineken /2 ;
-
-						if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade * 2 ;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike * 2;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds * 2;
-							document.getElementById("H_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-	
-			}
-			break;
-
-		case "G" :
-
-			switch (cartasMaestro[_valorIndiceINT][0]) {
-
-				case "1000" :
-
-					_valorNike = _valorNike - 100;
-					_valorGatorade = _valorGatorade + 1000;
-					_valorHeineken = _valorHeineken - 100;
-					_valorMcDonalds = _valorMcDonalds - 100;
-					break;
-
-				case "600" :
-
-					_valorGatorade = _valorGatorade + 600;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken - 300;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike - 300;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds - 300;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					
-					break;
-	
-				case "500" :
-
-					_valorGatorade = _valorGatorade - 500;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken + 600;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike + 600;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds + 600;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-	
-				case "x2" :
-
-					_valorGatorade = _valorGatorade * 2;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken /2 ;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike /2;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds /2;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-					break;
-
-				case "/2" :
-
-					_valorGatorade = _valorGatorade /2 ;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken * 2 ;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike * 2;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "M") {
-
-							_valorMcDonalds = _valorMcDonalds * 2;
-							document.getElementById("G_Radio").disabled = true;
-							document.getElementById("M_Radio").disabled = true;
-							break;
-						}
-
-					break;
-
-			}
-			break;
-
-		case "M" :
-
-			switch (cartasMaestro[_valorIndiceINT][0]) {
-
-				case "1000" :
-
-					_valorNike = _valorNike - 100;
-					_valorGatorade = _valorGatorade - 100;
-					_valorHeineken = _valorHeineken - 100;
-					_valorMcDonalds = _valorMcDonalds + 1000;
-					break;
-
-				case "600" :
-
-					_valorMcDonalds = _valorMcDonalds + 600;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken - 300;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike - 300;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade - 300;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-						}
-
-					break;
-		
-				case "500" :
-
-					_valorMcDonalds = _valorMcDonalds - 500;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken + 600;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike + 600;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade + 600;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-						}
-
-					break;
-		
-				case "x2" :
-
-					_valorMcDonalds = _valorMcDonalds * 2;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken /2 ;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike /2;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade /2;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-						}
-					break;
-
-				case "/2" :
-
-					_valorMcDonalds = _valorMcDonalds /2 ;
-
-						if (_empresaElegida == "H") {
-
-							_valorHeineken = _valorHeineken * 2 ;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("H_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "N") {
-
-							_valorNike = _valorNike * 2;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("N_Radio").disabled = true;
-							break;
-
-						}else if (_empresaElegida == "G") {
-
-							_valorGatorade = _valorGatorade * 2;
-							document.getElementById("M_Radio").disabled = true;
-							document.getElementById("G_Radio").disabled = true;
-							break;
-						}
-
-					break;
-		
-			}
-			break;
-
-
-	}
+    switch (cartasMaestro[_valorIndiceINT][1]) {
+        // ... (todo el switch original, sin cambios) ...
+        case "N" :
+            switch (cartasMaestro[_valorIndiceINT][0]) {
+                case "1000" :
+                    _valorNike = _valorNike + 1000;
+                    _valorGatorade = _valorGatorade - 100;
+                    _valorHeineken = _valorHeineken - 100;
+                    _valorMcDonalds = _valorMcDonalds - 100;
+                    break;
+                case "600" :
+                    _valorNike = _valorNike + 600;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade - 300;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken - 300;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds - 300;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "500" :
+                    _valorNike = _valorNike - 500;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade + 600;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken + 600;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds + 600;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "x2" :
+                    _valorNike = _valorNike * 2;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade /2 ;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken /2;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds /2;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "/2" :
+                    _valorNike = _valorNike /2 ;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade * 2 ;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken * 2;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds * 2;
+                        document.getElementById("N_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+            }
+            break;
+        case "H" :
+            switch (cartasMaestro[_valorIndiceINT][0]) {
+                case "1000" :
+                    _valorNike = _valorNike - 100;
+                    _valorGatorade = _valorGatorade - 100;
+                    _valorHeineken = _valorHeineken + 1000;
+                    _valorMcDonalds = _valorMcDonalds - 100;
+                    break;
+                case "600" :
+                    _valorHeineken = _valorHeineken + 600;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade - 300;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike - 300;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds - 300;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "500" :
+                    _valorHeineken = _valorHeineken - 500;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade + 600;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike + 600;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds + 600;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "x2" :
+                    _valorHeineken = _valorHeineken * 2;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade /2 ;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike /2;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds /2;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "/2" :
+                    _valorHeineken = _valorHeineken /2 ;
+                    if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade * 2 ;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike * 2;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds * 2;
+                        document.getElementById("H_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+            }
+            break;
+        case "G" :
+            switch (cartasMaestro[_valorIndiceINT][0]) {
+                case "1000" :
+                    _valorNike = _valorNike - 100;
+                    _valorGatorade = _valorGatorade + 1000;
+                    _valorHeineken = _valorHeineken - 100;
+                    _valorMcDonalds = _valorMcDonalds - 100;
+                    break;
+                case "600" :
+                    _valorGatorade = _valorGatorade + 600;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken - 300;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike - 300;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds - 300;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "500" :
+                    _valorGatorade = _valorGatorade - 500;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken + 600;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike + 600;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds + 600;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "x2" :
+                    _valorGatorade = _valorGatorade * 2;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken /2 ;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike /2;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds /2;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "/2" :
+                    _valorGatorade = _valorGatorade /2 ;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken * 2 ;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike * 2;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "M") {
+                        _valorMcDonalds = _valorMcDonalds * 2;
+                        document.getElementById("G_Radio").disabled = true;
+                        document.getElementById("M_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+            }
+            break;
+        case "M" :
+            switch (cartasMaestro[_valorIndiceINT][0]) {
+                case "1000" :
+                    _valorNike = _valorNike - 100;
+                    _valorGatorade = _valorGatorade - 100;
+                    _valorHeineken = _valorHeineken - 100;
+                    _valorMcDonalds = _valorMcDonalds + 1000;
+                    break;
+                case "600" :
+                    _valorMcDonalds = _valorMcDonalds + 600;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken - 300;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike - 300;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade - 300;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "500" :
+                    _valorMcDonalds = _valorMcDonalds - 500;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken + 600;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike + 600;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade + 600;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "x2" :
+                    _valorMcDonalds = _valorMcDonalds * 2;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken /2 ;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike /2;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade /2;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+                case "/2" :
+                    _valorMcDonalds = _valorMcDonalds /2 ;
+                    if (_empresaElegida == "H") {
+                        _valorHeineken = _valorHeineken * 2 ;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("H_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "N") {
+                        _valorNike = _valorNike * 2;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("N_Radio").disabled = true;
+                        break;
+                    }else if (_empresaElegida == "G") {
+                        _valorGatorade = _valorGatorade * 2;
+                        document.getElementById("M_Radio").disabled = true;
+                        document.getElementById("G_Radio").disabled = true;
+                        break;
+                    }
+                    break;
+            }
+            break;
+    }
 
 // redondeos completo personalizado en 50 
-
-	redondeos();
+    redondeos();
 
 // Calculo de topes ( reventada o quiebres ) *-// 
-
-	topes();
+    topes();
 
 // cambio los elementos en pantalla 
+    setCotizacion('ValorHeineken',  _valorHeineken);
+    setCotizacion('ValorGatorade',  _valorGatorade);
+    setCotizacion('ValorMcDonalds', _valorMcDonalds);
+    setCotizacion('ValorNike',      _valorNike);
+    
+    dibujoGraficaBarras(_valorHeineken,_valorGatorade,_valorNike,_valorMcDonalds);
 
+    // Agrega un elemento mas al array con el valor actual 
+    var _auxInterno = _valorIndiceGraficas + 1;
 
-	setCotizacion('ValorHeineken',  _valorHeineken);
-	setCotizacion('ValorGatorade',  _valorGatorade);
-	setCotizacion('ValorMcDonalds', _valorMcDonalds);
-	setCotizacion('ValorNike',      _valorNike);
-	
-	dibujoGraficaBarras(_valorHeineken,_valorGatorade,_valorNike,_valorMcDonalds);
+    _logHeineken[_valorIndiceGraficas+1] = _valorHeineken;
+    _logGatorade[_valorIndiceGraficas+1] = _valorGatorade;
+    _logNike[_valorIndiceGraficas+1] = _valorNike;
+    _logMcDonalds[_valorIndiceGraficas+1] = _valorMcDonalds;
 
-	// Agrega un elemento mas al array con el valor actual 
-	var _auxInterno = _valorIndiceGraficas + 1;
+    if (_jugadores[0][0] != "Sin Asignar") {
+        _logJugador_1[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador1_Total").innerHTML));
+    }else {
+        _logJugador_1[_valorIndiceGraficas+1]=0;
+    }
+    if (_jugadores[1][0] != "Sin Asignar") {
+        _logJugador_2[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador2_Total").innerHTML));
+    }else {
+        _logJugador_2[_valorIndiceGraficas+1]=0;
+    }
+    if (_jugadores[2][0] != "Sin Asignar") {
+        _logJugador_3[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador3_Total").innerHTML));
+    }else {
+        _logJugador_3[_valorIndiceGraficas+1]=0;
+    }
+    if (_jugadores[3][0] != "Sin Asignar") {
+        _logJugador_4[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador4_Total").innerHTML));
+    }else {
+        _logJugador_4[_valorIndiceGraficas+1]=0;
+    }
 
-	_logHeineken[_valorIndiceGraficas+1] = _valorHeineken;
-	_logGatorade[_valorIndiceGraficas+1] = _valorGatorade;
-	_logNike[_valorIndiceGraficas+1] = _valorNike;
-	_logMcDonalds[_valorIndiceGraficas+1] = _valorMcDonalds;
+    _logLabels[_valorIndiceGraficas+1]=_auxInterno.toString();
 
-	if (_jugadores[0][0] != "Sin Asignar") {
-		_logJugador_1[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador1_Total").innerHTML));
-
-	}else {
-		_logJugador_1[_valorIndiceGraficas+1]=0;
-
-
-	}
-
-	if (_jugadores[1][0] != "Sin Asignar") {
-		_logJugador_2[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador2_Total").innerHTML));
-
-	}else {
-		_logJugador_2[_valorIndiceGraficas+1]=0;
-
-
-	}
-
-	if (_jugadores[2][0] != "Sin Asignar") {
-		_logJugador_3[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador3_Total").innerHTML));
-
-	}else {
-		_logJugador_3[_valorIndiceGraficas+1]=0;
-
-	}
-
-	if (_jugadores[3][0] != "Sin Asignar") {
-		_logJugador_4[_valorIndiceGraficas+1]=Number(format2Num(document.getElementById("Jugador4_Total").innerHTML));
-
-	}else {
-		_logJugador_4[_valorIndiceGraficas+1]=0;
-
-
-	}
-
-//	_logJugador_1[_valorIndice+1]=Number(format2Num(document.getElementById("Jugador1_Total").innerHTML));
-//	_logJugador_2[_valorIndice+1]=Number(format2Num(document.getElementById("Jugador2_Total").innerHTML));
-//	_logJugador_3[_valorIndice+1]=Number(format2Num(document.getElementById("Jugador3_Total").innerHTML));
-//	_logJugador_4[_valorIndice+1]=Number(format2Num(document.getElementById("Jugador4_Total").innerHTML));
-
-	_logLabels[_valorIndiceGraficas+1]=_auxInterno.toString();
-
-
-	grafcaLineal();
-
+    grafcaLineal();
 
 // ajusto totales de jugador 
+    calcularTotalJugadores();
 
-	calcularTotalJugadores();
+// --- NUEVO: Actualizar columna RESULTADO con la diferencia ---
+for (var i = 0; i < 4; i++) {
+    if (_jugadores[i][0] !== "Sin Asignar") {
+        var totalDespues = Number(format2Num(document.getElementById("Jugador" + (i+1) + "_Total").innerHTML));
+        var totalAntes = totalesAntes[i] !== undefined && totalesAntes[i] !== null ? totalesAntes[i] : 0;
+        var diff = totalDespues - totalAntes;
+        var celdaResultado = document.getElementById("Jugador" + (i+1) + "_V_Cash");
+        if (celdaResultado) {
+            if (diff > 0) {
+                celdaResultado.innerHTML = "▲ " + num2Format(diff);
+                celdaResultado.style.color = "#a855f7";
+            } else if (diff < 0) {
+                celdaResultado.innerHTML = "▼ " + num2Format(Math.abs(diff));
+                celdaResultado.style.color = "#a855f7";
+            } else {
+                celdaResultado.innerHTML = "0";
+                celdaResultado.style.color = "#a855f7";
+            }
+        }
+    } else {
+        // Para asientos sin jugador, limpiar
+        var celdaVacia = document.getElementById("Jugador" + (i+1) + "_V_Cash");
+        if (celdaVacia) celdaVacia.innerHTML = ".";
+    }
+}
+// ---------------------------------------------
 
 // sincronizcion socket server ... 
-
-	sincronizarMiPantallaAlServidor();	
-
-
+    sincronizarMiPantallaAlServidor();  
 }
 
 // --------------------------------------------- Boton Finalizar Jugada --------------------------------- //
@@ -2486,7 +2394,18 @@ function jugadaCartaDeLaMano(_CartaElegida) {
     var _miIndice = miAsientoLocal - 1;
     if (_valorIndice > 67) {
         document.getElementById('CartaMaso').src = "_imagenes/MasoVacio.png";
-        alert("El juego ha finalizado");
+        // Deshabilitar mazo y cartas de mano
+        document.getElementById('CartaMaso').onclick = null;
+        document.getElementById('CartaMaso').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso1').onclick = null;
+        document.getElementById('CartaMaso2').onclick = null;
+        document.getElementById('CartaMaso3').onclick = null;
+        document.getElementById('CartaMaso4').onclick = null;
+        document.getElementById('CartaMaso1').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso2').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso3').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso4').style.cursor = 'not-allowed';
+        return;
     }
     else if (_jugadores[_miIndice][_CartaElegida+1] && _jugarCartas) {
         var _auxJ = _miIndice;
@@ -2522,7 +2441,17 @@ function jugadaCartaDeLaMano(_CartaElegida) {
         socket.emit('mostrarCartaEspera', _auxJ+_CartaElegida);
         jugarCartasCompletar(false, _auxJ+_CartaElegida);
     } else {
-        alert("El jugador ya jugo su carta y no puede volver a jugar otra hasta su proximo turno ");
+        // Si ya jugó carta, deshabilitar mazo y cartas
+        document.getElementById('CartaMaso').onclick = null;
+        document.getElementById('CartaMaso').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso1').onclick = null;
+        document.getElementById('CartaMaso2').onclick = null;
+        document.getElementById('CartaMaso3').onclick = null;
+        document.getElementById('CartaMaso4').onclick = null;
+        document.getElementById('CartaMaso1').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso2').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso3').style.cursor = 'not-allowed';
+        document.getElementById('CartaMaso4').style.cursor = 'not-allowed';
     }
 }
 
@@ -2533,7 +2462,6 @@ function jugadaCartaDeLaMano(_CartaElegida) {
 function dibujoGraficaBarras(_Heineken, _Gatorade, _Nike, _McDonalds) {
     const myCanvas = document.getElementById("canvasBarras");
     
-    // Calcular altura disponible dinámicamente
     const contenedor = document.getElementById('LogoTablero');
     const alturaContenedor = contenedor ? contenedor.offsetHeight : 820;
     const alturaUsada = myCanvas.offsetTop;
@@ -2597,14 +2525,12 @@ function dibujoGraficaBarras(_Heineken, _Gatorade, _Nike, _McDonalds) {
 
         // --- GRILLA HORIZONTAL cada 100 ---
         const gridSteps = maxValue / 100;
-        const gridTop    = padding;
         const gridBottom = myCanvas.height - padding;
         const gridLeft   = padding;
         const gridRight  = myCanvas.width - padding;
 
         for (let i = 0; i <= gridSteps; i++) {
             const yGrid = gridBottom - (i / gridSteps) * heightReal;
-
             ctx.beginPath();
             ctx.strokeStyle = i === 0 ? "#2a3a4a" : "#131e2a";
             ctx.lineWidth = i === 0 ? 1.5 : 0.5;
@@ -2613,20 +2539,6 @@ function dibujoGraficaBarras(_Heineken, _Gatorade, _Nike, _McDonalds) {
             ctx.lineTo(gridRight, yGrid);
             ctx.stroke();
             ctx.setLineDash([]);
-        }
-
-        // --- SCAN LINE: línea horizontal que barre de abajo a arriba (solo primeros 400ms) ---
-        if (progreso < 0.5) {
-            const scanEase = progreso / 0.5; // 0→1 en la primera mitad
-            const scanY = gridBottom - (scanEase * heightReal);
-            const scanGrad = ctx.createLinearGradient(gridLeft, scanY, gridRight, scanY);
-            scanGrad.addColorStop(0,    'rgba(74,158,255,0)');
-            scanGrad.addColorStop(0.3,  'rgba(74,158,255,0.12)');
-            scanGrad.addColorStop(0.5,  'rgba(74,158,255,0.35)');
-            scanGrad.addColorStop(0.7,  'rgba(74,158,255,0.12)');
-            scanGrad.addColorStop(1,    'rgba(74,158,255,0)');
-            ctx.fillStyle = scanGrad;
-            ctx.fillRect(gridLeft, scanY - 2, gridRight - gridLeft, 4);
         }
 
         // --- BARRAS ---
@@ -2668,30 +2580,28 @@ function dibujoGraficaBarras(_Heineken, _Gatorade, _Nike, _McDonalds) {
             ctx.fillStyle = colores[marca].top;
             ctx.font = "bold 12px 'Share Tech Mono', monospace";
             ctx.textAlign = "center";
-            ctx.fillText(Math.round(valorCalculado), x + (anchoBarra / 2), y - 7);
+            const valorTexto = Math.round(valorCalculado);
+            ctx.fillText(valorTexto, x + (anchoBarra / 2), y - 7);
 
-            // --- PARTÍCULA DE DESTELLO en la cima al finalizar la animación ---
+            // --- Triángulo de dirección (usa _ultimaDireccion global) ---
             if (progreso >= 1) {
-                const cx = x + anchoBarra / 2;
-                const cy = y;
-                // Corona de destellos (8 rayos)
-                for (let r = 0; r < 8; r++) {
-                    const angle  = (r / 8) * Math.PI * 2;
-                    const len    = 10 + Math.random() * 6;
-                    const xEnd   = cx + Math.cos(angle) * len;
-                    const yEnd   = cy + Math.sin(angle) * len;
-                    ctx.beginPath();
-                    ctx.strokeStyle = colores[marca].top;
-                    ctx.lineWidth   = 1.2;
-                    ctx.globalAlpha = 0.55;
-                    ctx.shadowColor = colores[marca].top;
-                    ctx.shadowBlur  = 6;
-                    ctx.moveTo(cx, cy);
-                    ctx.lineTo(xEnd, yEnd);
-                    ctx.stroke();
+                let direccion = 0;
+                switch (marca) {
+                    case 'Heineken': direccion = _ultimaDireccion.heineken; break;
+                    case 'Gatorade': direccion = _ultimaDireccion.gatorade; break;
+                    case 'Nike':     direccion = _ultimaDireccion.nike; break;
+                    case 'McDonalds':direccion = _ultimaDireccion.mcdonalds; break;
                 }
-                ctx.globalAlpha = 1;
-                ctx.shadowBlur  = 0;
+                if (direccion > 0) {
+                    ctx.fillStyle = colores[marca].top;
+                    ctx.font = "bold 14px 'Share Tech Mono', monospace";
+                    ctx.fillText("▲", x + (anchoBarra / 2) + 20, y - 7);
+                } else if (direccion < 0) {
+                    ctx.fillStyle = colores[marca].top;
+                    ctx.font = "bold 14px 'Share Tech Mono', monospace";
+                    ctx.fillText("▼", x + (anchoBarra / 2) + 20, y - 7);
+                }
+                // Si direccion === 0, no se dibuja nada
             }
 
             index++;
@@ -3068,11 +2978,11 @@ function iniciarTimerTurno() {
     if (typeof timerTurno !== 'undefined' && timerTurno !== null) {
         clearInterval(timerTurno);
     }
-    let tiempoRestante = 5; // 5 segundos para pruebas
+    let tiempoRestante = 300; // 5 minutos en segundos
     const display = document.getElementById('TemporizadorTurno');
     // 2. Seteo inicial inmediato (Evita que se vea el tiempo del turno anterior)
     if (display) {
-        display.innerHTML = "00:05";
+        display.innerHTML = "05:00";
     }
     timerTurno = setInterval(function () {
         if (!display) {
@@ -3159,6 +3069,7 @@ function sincronizarMiPantallaAlServidor() {
 }
 
 // ----------------------- log historial 
+
 function abrirHistorial() {
     var contenido = document.getElementById('ContenidoHistorial');
     contenido.innerHTML = '';
@@ -3169,7 +3080,18 @@ function abrirHistorial() {
         return;
     }
 
-    // Orden descendente — últimas operaciones primero
+    // Mapeo de violetas según índice del jugador
+    var violetas = ['#a855f7', '#b66eff', '#c280ff', '#d49cff'];
+
+    function getColorPorJugador(nombre) {
+        for (var i = 0; i < _jugadores.length; i++) {
+            if (_jugadores[i][0] === nombre) {
+                return violetas[i % violetas.length];
+            }
+        }
+        return violetas[0];
+    }
+
     var historialInvertido = _historialTransacciones.slice().reverse();
 
     historialInvertido.forEach(function(item) {
@@ -3187,17 +3109,51 @@ function abrirHistorial() {
                 case 'x2':   descripcion = principal + ' x2 / ' + elegida + ' /2'; break;
                 case '/2':   descripcion = principal + ' /2 / ' + elegida + ' x2'; break;
             }
-            contenido.innerHTML += '<p style="margin:4px 0; padding:7px 12px; background:#0d0d0d; border-left:3px solid #ffc107; border-radius:4px; font-size:18px; color:#8ca0b8;"><b style="color:#ffc107;">' + item.jugador + '</b> · CARTA [' + item.origen + '] → ' + descripcion + '</p>';
+            
+            var iconoCarta = '<img src="_imagenes/CartaEjemploAtras.png" style="width:22px; height:auto; border-radius:2px; border:1px solid #0ff;">';
+            var iconoOrigen = '';
+            if (item.origen === 'mano') {
+                iconoOrigen = '<img src="_imagenes/iconoMano.png" style="width:22px; height:auto; vertical-align:middle; margin-left:5px;">';
+            } else {
+                iconoOrigen = '<img src="_imagenes/iconoMaso.png" style="width:22px; height:auto; vertical-align:middle; margin-left:5px;">';
+            }
+            
+            var colorJugador = getColorPorJugador(item.jugador);
+            
+            // Borde color según tipo de transacción (para carta usamos dorado)
+            var bordeColor = '#ffc107';
+            
+            contenido.innerHTML += '<div style="margin:6px 0; background:#000000; border-left:3px solid ' + bordeColor + '; border-right:3px solid ' + bordeColor + '; border-top:0.5px solid ' + bordeColor + '; border-bottom:0.5px solid ' + bordeColor + '; border-radius:4px; padding:7px 12px; display:flex; align-items:center; justify-content:space-between;">' +
+                '<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">' +
+                    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="8" r="4" fill="#0ff"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#0ff" stroke-width="2" stroke-linecap="round"/></svg>' +
+                    '<span style="color:' + colorJugador + '; font-weight:bold;">' + item.jugador + '</span>' +
+                    '<span style="margin:0 2px;">·</span>' +
+                    iconoCarta +
+                    iconoOrigen +
+                    '<span> → ' + descripcion + '</span>' +
+                '</div>' +
+                '<span style="color:#cccccc; font-size:18px;">→</span>' +
+            '</div>';
         } else {
             var colorBorde = item.tipo === 'Compra' ? '#28a745' : '#dc3545';
             var colorTipo  = item.tipo === 'Compra' ? '#28a745' : '#dc3545';
-            contenido.innerHTML += '<p style="margin:4px 0; padding:7px 12px; background:#0d0d0d; border-left:3px solid ' + colorBorde + '; border-radius:4px; font-size:18px; color:#8ca0b8;"><b style="color:#ffc107;">' + item.jugador + '</b> · <b style="color:' + colorTipo + ';">' + item.tipo + '</b> → ' + item.empresa + ' <b style="color:#ffffff;">' + item.cantidad + '</b> acciones</p>';
+            var colorJugador = getColorPorJugador(item.jugador);
+            
+            contenido.innerHTML += '<div style="margin:6px 0; background:#000000; border-left:3px solid ' + colorBorde + '; border-right:3px solid ' + colorBorde + '; border-top:0.5px solid ' + colorBorde + '; border-bottom:0.5px solid ' + colorBorde + '; border-radius:4px; padding:7px 12px; display:flex; align-items:center; justify-content:space-between;">' +
+                '<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">' +
+                    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="8" r="4" fill="#0ff"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#0ff" stroke-width="2" stroke-linecap="round"/></svg>' +
+                    '<span style="color:' + colorJugador + '; font-weight:bold;">' + item.jugador + '</span>' +
+                    '<span style="margin:0 2px;">·</span>' +
+                    '<span style="color:' + colorTipo + ';">' + item.tipo + '</span>' +
+                    '<span> → ' + item.empresa + ' <b style="color:#ffffff;">' + item.cantidad + '</b> acciones</span>' +
+                '</div>' +
+                '<span style="color:#cccccc; font-size:18px;">→</span>' +
+            '</div>';
         }
     });
 
     document.getElementById('ModalHistorial').style.display = 'flex';
 }
-
 // -------------------- drop down personalizado 
 
 function toggleComboBox() {

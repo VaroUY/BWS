@@ -610,27 +610,26 @@
 
   <div id="ContenedorGeneral">
     <!-- ==================== LOGO TABLERO ==================== -->
-    <div id="LogoTablero">
-      <div id="logo">
-        <img src="_imagenes/logo75.png" style="cursor:pointer; width:100%; display:block; height:auto;"/>
-      </div>
-      <div id="MonitorTituloCotizaciones" style="background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%); color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; padding: 5px 8px; border-top: 1px solid #1e3a5f; border-bottom: 1px solid #1e3a5f; text-align: center; margin-top: 0;">
-        COTIZACIONES
-      </div>
-      <div id="empresas_valor">
-        <div class="header-cotizaciones">
-          <img src="_imagenes/empresas_valor75.png" style="width:100%; display:block; height:auto;"/>
-        </div>
-        <div id="ContenedorEtiquetas">
-          <div class="item-cotizacion"><span class="value" id="ValorHeineken">1000</span></div>
-          <div class="item-cotizacion"><span class="value" id="ValorGatorade">1000</span></div>
-          <div class="item-cotizacion"><span class="value" id="ValorNike">1000</span></div>
-          <div class="item-cotizacion"><span class="value" id="ValorMcDonalds">1000</span></div>
-        </div>
-      </div>
-      <canvas id="canvasBarras" style="background-color: #060a0e; display:block; margin: 0 auto; width: 362px;"></canvas>
+<div id="LogoTablero">
+  <div id="logo">
+    <img src="_imagenes/logo75.png" style="cursor:pointer; width:100%; display:block; height:auto;"/>
+  </div>
+  <div id="MonitorTituloCotizaciones" style="background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%); color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; padding: 5px 8px; border-top: 1px solid #1e3a5f; border-bottom: 1px solid #1e3a5f; text-align: center; margin: 0;">
+    COTIZACIONES
+  </div>
+  <div id="empresas_valor" style="margin: 0; padding: 0; line-height: 0;">
+    <div class="header-cotizaciones" style="margin: 0; padding: 0; line-height: 0; display: block;">
+      <img src="_imagenes/empresas_valor75.png" style="width:100%; display:block; height:auto; margin: 0; padding: 0; border: 0; vertical-align: bottom;"/>
     </div>
-
+    <div id="ContenedorEtiquetas" style="margin: 0; padding: 0; line-height: normal; background-color: transparent;">
+      <div class="item-cotizacion"><span class="value" id="ValorHeineken">1000</span></div>
+      <div class="item-cotizacion"><span class="value" id="ValorGatorade">1000</span></div>
+      <div class="item-cotizacion"><span class="value" id="ValorNike">1000</span></div>
+      <div class="item-cotizacion"><span class="value" id="ValorMcDonalds">1000</span></div>
+    </div>
+  </div>
+  <canvas id="canvasBarras" style="background-color: #060a0e; display:block; margin: 0 auto; width: 362px;"></canvas>
+</div>
     <!-- ==================== MONITOR CENTRAL ==================== -->
     <div id="MonitorCentral">
       <div id="MonitorHeader"><img src="_imagenes/MonitorHeader.png" style="margin-left: 2px;"/></div>
@@ -649,7 +648,7 @@
       <div id="MonitorSubTitulo">VALOR ACCIONARIO</div>
       <div id="MonitorEmpresasValores">
         <table>
-          <thead><tr><th class="th-nombre">JUGADOR</th><th class="th-total">CARTAS</th><th class="th-cash">CASH</th><th class="th-h">HNK $</th><th class="th-g">GAT $</th><th class="th-n">NKE $</th><th class="th-m">MCD $</th></tr></thead>
+          <thead><tr><th class="th-nombre">JUGADOR</th><th class="th-total">CARTAS</th><th class="th-cash" style="padding-left: 4px;" >RESULTADO</th><th class="th-h">HNK $</th><th class="th-g">GAT $</th><th class="th-n">NKE $</th><th class="th-m">MCD $</th></tr></thead>
           <tbody>
             <tr id="Jugador1_V_Linea"><td id="Jugador1_V_Nombre">—</td><td id="Jugador1_V_Total"><span class="card-indicator" id="J1_C1" style="background:#89152b;"></span><span class="card-indicator" id="J1_C2" style="background:#89152b;"></span><span class="card-indicator" id="J1_C3" style="background:#89152b;"></span><span class="card-indicator" id="J1_C4" style="background:#89152b;"></span></td><td id="Jugador1_V_Cash">.</td><td id="Jugador1_V_Heineken">.</td><td id="Jugador1_V_Gatorade">.</td><td id="Jugador1_V_Nike">.</td><td id="Jugador1_V_McDonalds">.</td></tr>
             <tr id="Jugador2_V_Linea"><td id="Jugador2_V_Nombre">—</td><td id="Jugador2_V_Total"><span class="card-indicator" id="J2_C1" style="background:#89152b;"></span><span class="card-indicator" id="J2_C2" style="background:#89152b;"></span><span class="card-indicator" id="J2_C3" style="background:#89152b;"></span><span class="card-indicator" id="J2_C4" style="background:#89152b;"></span></td><td id="Jugador2_V_Cash">.</td><td id="Jugador2_V_Heineken">.</td><td id="Jugador2_V_Gatorade">.</td><td id="Jugador2_V_Nike">.</td><td id="Jugador2_V_McDonalds">.</td></tr>
@@ -668,32 +667,44 @@
     <div id="MonitorInteractivo">
       <p id="MInteractivoTituloInteractivo">TRANSACCIONES</p>
       <!-- MODAL HISTORIAL -->
-      <div id="ModalHistorial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
-        <div class="bws-modal-up" style="background:#000000; border:1px solid #7a5c00; border-radius:14px; padding:28px 32px; width:680px; max-width:90vw; height:60vh; display:flex; flex-direction:column; box-shadow: 0 0 40px rgba(255,193,7,0.1), inset 0 1px 0 rgba(255,193,7,0.06);">
-          <div style="width:600px; height:2px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin: 0 auto 16px auto; border-radius:2px;"></div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #7a5c00; padding-bottom:12px;">
-            <div><h2 style="color:#ffffff; font-size:22px; letter-spacing:3px; font-family:'Rajdhani',sans-serif; font-weight:500; margin:0; text-transform:uppercase;">HISTORIAL DE TRANSACCIONES</h2><p style="color:#ffc107; font-family:'Rajdhani',sans-serif; font-size:16px; letter-spacing:3px; margin-top:3px; opacity:0.4;">ÚLTIMAS OPERACIONES</p></div>
-            <button onclick="cerrarHistorial()" style="background:transparent; color:#ffc107; border:1px solid #7a5c00; border-radius:6px; padding:6px 16px; cursor:pointer; font-weight:700; font-size:11px; letter-spacing:2px;">✕ CERRAR</button>
-          </div>
-          <div id="ContenidoHistorial" style="overflow-y:auto; flex:1; font-size:23px; color:#8ca0b8; font-family:'Share Tech Mono',monospace; line-height:1.8; padding-right:8px;"></div>
-          <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #7a5c00, transparent); margin: 12px auto 0 auto; border-radius:2px;"></div>
-        </div>
-      </div>
-      <!-- MODAL ESPERA TURNO -->
-      <div id="ModalEsperaTurno" style="display:none; position:absolute; top:10px; left:8px; width:258px; min-height:220px; z-index:100; background:linear-gradient(160deg, #080c10 0%, #0d1929 100%); border:1px solid #1e3a5f; border-radius:12px; flex-direction:column; align-items:center; justify-content:center; padding:18px 12px 25px 12px; box-shadow: 0 0 25px rgba(74,158,255,0.15), inset 0 1px 0 rgba(74,158,255,0.1);">
-        <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin-bottom:12px;"></div>
-        <div style="font-size:20px; margin-bottom:6px; opacity:0.7;">⏳</div>
-        <p style="color:#4a9eff; font-size:9px; letter-spacing:4px; text-transform:uppercase; margin-bottom:4px;">ESPERANDO AL JUGADOR</p>
-        <p id="TextoTurnoNombre" style="color:#ffffff; font-weight:900; font-size:16px; margin-bottom:14px; text-align:center;">...</p>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="display:flex; flex-direction:column; align-items:center;">
-            <p style="color:#4a9eff; font-size:8px; letter-spacing:3px; margin-bottom:4px;">TIEMPO</p>
-            <p id="TemporizadorTurno" style="color:#4a9eff; font-family:'Share Tech Mono',monospace; font-size:26px; font-weight:bold; background:rgba(74,158,255,0.08); border:1px solid rgba(74,158,255,0.3); padding:4px 12px; border-radius:6px;">05:00</p>
-          </div>
-          <button disabled id="BtnSaltearTurno" style="padding:10px 14px; background:#111820; color:#3a4a5a; border:1px solid #1e3a5f; border-radius:6px; font-weight:bold; cursor:not-allowed; font-size:11px;">SALTEAR</button>
-        </div>
-        <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-top:14px;"></div>
-      </div>
+<div id="ModalHistorial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
+  <div class="bws-modal-up" style="background:#000000; border:1px solid #7a5c00; border-radius:14px; padding:28px 32px; width:680px; max-width:90vw; height:60vh; display:flex; flex-direction:column; box-shadow: 0 0 40px rgba(255,193,7,0.1), inset 0 1px 0 rgba(255,193,7,0.06); position:relative;">
+    <!-- Botón cerrar solo X en esquina superior derecha -->
+    <button onclick="cerrarHistorial()" style="position:absolute; top:12px; right:12px; background:transparent; color:#ffc107; border:1px solid #7a5c00; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">✕</button>
+    
+    <div style="width:600px; height:2px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin: 0 auto 16px auto; border-radius:2px;"></div>
+    
+    <!-- Título y subtítulo centrados -->
+    <div style="text-align:center; margin-bottom:16px;">
+      <h2 style="color:#ffffff; font-size:22px; letter-spacing:3px; font-family:'Rajdhani',sans-serif; font-weight:500; margin:0; text-transform:uppercase;">HISTORIAL DE TRANSACCIONES</h2>
+      <p style="color:#ffc107; font-family:'Rajdhani',sans-serif; font-size:16px; letter-spacing:3px; margin-top:3px; opacity:0.4;">ÚLTIMAS OPERACIONES</p>
+    </div>
+    
+    <div id="ContenidoHistorial" style="overflow-y:auto; flex:1; font-size:23px; color:#8ca0b8; font-family:'Share Tech Mono',monospace; line-height:1.8; padding-right:8px;"></div>
+    
+    <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #7a5c00, transparent); margin: 12px auto 0 auto; border-radius:2px;"></div>
+  </div>
+</div>      <!-- MODAL ESPERA TURNO -->
+<div id="ModalEsperaTurno" style="display:none; position:absolute; top:10px; left:8px; width:258px; min-height:220px; z-index:100; background:#000000; border:2px solid #ffc107; border-radius:12px; flex-direction:column; align-items:center; justify-content:center; padding:18px 12px 25px 12px; box-shadow: 0 0 25px rgba(255,193,7,0.2), inset 0 1px 0 rgba(255,193,7,0.1);">
+  <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin-bottom:12px;"></div>
+  
+  <!-- Icono de reloj SVG lineal -->
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:6px;">
+    <circle cx="12" cy="12" r="10" stroke="#ffc107" stroke-width="1.5"/>
+    <path d="M12 7v5l3 3" stroke="#ffc107" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  
+  <p style="color:#ffc107; font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; font-weight:normal;">ESPERANDO AL JUGADOR</p>
+  <p id="TextoTurnoNombre" style="color:#ffffff; font-weight:900; font-size:16px; margin-bottom:14px; text-align:center;">...</p>
+  <div style="display:flex; align-items:stretch; gap:12px; width:100%;">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,193,7,0.08); border:1px solid rgba(255,193,7,0.3); border-radius:6px; padding:4px 0;">
+      <p style="color:#ffc107; font-size:8px; letter-spacing:3px; margin-bottom:2px;">TIEMPO</p>
+      <p id="TemporizadorTurno" style="color:#ffc107; font-family:'Share Tech Mono',monospace; font-size:26px; font-weight:bold; margin:0;">05:00</p>
+    </div>
+    <button disabled id="BtnSaltearTurno" style="flex:1; background:#1a1a1a; color:#aa8800; border:1px solid #ffc107; border-radius:6px; font-weight:bold; font-size:11px; cursor:not-allowed; padding:0; text-align:center;">SALTEAR</button>
+  </div>
+  <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin-top:14px;"></div>
+</div>     
       <!-- HEADER INTERACTIVO -->
       <div id="MInteractivoHeader" style="width: 275px; margin-top: 0px;">
         <p style="margin-left: 4px;">TURNO: <span id="TurnoJugador">Sin comenzar</span></p>
