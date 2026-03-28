@@ -288,7 +288,7 @@ function iniciarFaseVotacion() {
 
 // Función para procesar los votos después de que todos hayan votado o por timeout
 // Coloca esto después de la función iniciarFaseVotacion y antes de io.on('connection', ...)
-
+//
 function procesarVotos() {
     if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
     estadoJuego.votacion.activa = false;

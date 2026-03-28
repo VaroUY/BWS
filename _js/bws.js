@@ -3154,6 +3154,7 @@ function abrirHistorial() {
 
     document.getElementById('ModalHistorial').style.display = 'flex';
 }
+//
 // -------------------- drop down personalizado 
 
 function toggleComboBox() {
