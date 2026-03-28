@@ -25,6 +25,9 @@ var _lineChartInstance = null;
 var _actualizarGrafica = false;
 var _gameOver = false; // Para evitar múltiples triggers
 var _ultimaDireccion = { heineken: 0, gatorade: 0, nike: 0, mcdonalds: 0 };
+var _finalizarBlinkInterval = null;   // ID del setInterval para el parpadeo
+var _beepInterval = null;             // ID del setInterval para el beep
+var _beepAudioContext = null;         // Contexto de audio para el beep (se inicializará al primer uso)
 
 
 // ---------------------------------------------------------------------------------------------//
@@ -80,8 +83,84 @@ var _graficaLineaEmpresasCanvas = document.getElementById("popChart");
 var _queGraficaVa = "A";
 
 // ============================================================
-// NUEVAS FUNCIONES DE PRELOADER Y PRECARGA
+// ----------------- FUNCIONES GENERALES ----------------------
 // ============================================================
+
+// ==================== FUNCIONES DE BLINKING Y BEEP ====================
+function obtenerPrecioMinimoHabilitado() {
+    var precios = [];
+    if (!document.getElementById("H_Radio").disabled) precios.push(_valorHeineken);
+    if (!document.getElementById("G_Radio").disabled) precios.push(_valorGatorade);
+    if (!document.getElementById("N_Radio").disabled) precios.push(_valorNike);
+    if (!document.getElementById("M_Radio").disabled) precios.push(_valorMcDonalds);
+    return precios.length ? Math.min(...precios) : Infinity;
+}
+
+function evaluarCondicionFinalizar() {
+    // Solo aplica si ya se jugó carta y estamos en nuestro turno
+    if (_jugarCartas !== false) return false;
+    var miCash = Number(format2Num(document.getElementById("Jugador"+miAsientoLocal+"_Cash").innerHTML));
+    var precioMinimo = obtenerPrecioMinimoHabilitado();
+    return (miCash < precioMinimo);
+}
+
+function reproducirBeep() {
+    try {
+        // Inicializar contexto de audio solo si es necesario (se requiere interacción del usuario)
+        if (!_beepAudioContext) {
+            _beepAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Necesitamos que el contexto esté "resumed" por un clic del usuario; lo haremos al activar el beep
+        }
+        if (_beepAudioContext.state === 'suspended') {
+            _beepAudioContext.resume();
+        }
+        var osc = _beepAudioContext.createOscillator();
+        var gain = _beepAudioContext.createGain();
+        osc.connect(gain);
+        gain.connect(_beepAudioContext.destination);
+        osc.frequency.value = 880; // frecuencia aguda
+        gain.gain.value = 0.3;     // volumen moderado
+        osc.type = 'sine';
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, _beepAudioContext.currentTime + 0.2);
+        osc.stop(_beepAudioContext.currentTime + 0.2);
+    } catch(e) {
+        console.warn("No se pudo reproducir beep", e);
+    }
+}
+
+function iniciarBlinkYBeep() {
+    var btn = document.getElementById("Finalizar");
+    if (btn && !btn.classList.contains('blinking')) {
+        btn.classList.add('blinking');
+        // Iniciar beep cada 2 segundos
+        if (_beepInterval) clearInterval(_beepInterval);
+        _beepInterval = setInterval(function() {
+            if (evaluarCondicionFinalizar()) {
+                reproducirBeep();
+            } else {
+                detenerBlinkYBeep(); // si ya no se cumple, detener todo
+            }
+        }, 2000);
+    }
+}
+
+function detenerBlinkYBeep() {
+    var btn = document.getElementById("Finalizar");
+    if (btn && btn.classList.contains('blinking')) {
+        btn.classList.remove('blinking');
+    }
+    if (_beepInterval) {
+        clearInterval(_beepInterval);
+        _beepInterval = null;
+    }
+    // No cerramos el contexto de audio para poder reusarlo
+}
+
+// ====================================================================
+
+// NUEVAS FUNCIONES DE PRELOADER Y PRECARGA
+
 function actualizarPreloader(mensaje, progreso) {
     const texto = document.getElementById('preloaderText');
     const barra = document.getElementById('preloaderBar');
@@ -473,6 +552,10 @@ socket.on('reconectarJugador', (data) => {
 
 socket.on('actualizarTurno', (data) => {
     console.log("Cambio de turno recibido. Turno del jugador: " + data.turno);
+    
+    // Detener cualquier parpadeo/beep activo cuando cambia el turno
+    detenerBlinkYBeep();
+    
     // 1. Actualizamos la variable de turno global
     _turnoJugador = data.turno - 1;
     // 2. Reseteamos el flag de carta y el botón finalizar
@@ -1290,7 +1373,15 @@ function jugarCartasCompletar(_esDelMaso, _queCarta) {
     const cartaActualImg = document.getElementById('ModalCartaImagen');
     cartaActualImg.src = cartasMaestro[_valorIndiceAUX][2];
     // muestro la carta que salio en el modal antes de abrirlo
-    // (ya no es necesario copiar de CartaJugada)
+    
+    // === REPRODUCIR SONIDO ANTES DE ABRIR EL MODAL ===
+    const audio = document.getElementById('modalWhooshAudio');
+    if (audio) {
+        audio.currentTime = 0; // reiniciar si ya estaba sonando
+        audio.play().catch(e => console.log("Audio no pudo reproducirse:", e));
+    }
+    // ==============================================
+    
     modal.style.display = "flex"; 
     var cajaBlanca = document.getElementById("ModalCajaInterior");
     var mangoTitulo = document.getElementById("ModalHeader");
@@ -1699,6 +1790,14 @@ function ejecutarMovimientosUser() {
     debugBws("Boton : EJECUTAR");
     calcularTotalJugadores();
     document.getElementById("CantidadInput").value = "";
+
+    // ====== Evaluar blink/beep después de la transacción ======
+    if (miAsientoLocal === _turnoJugador + 1) {
+        if (evaluarCondicionFinalizar()) iniciarBlinkYBeep();
+        else detenerBlinkYBeep();
+    }
+    // ========================================================
+
     sincronizarMiPantallaAlServidor();
 }
 
@@ -1826,7 +1925,6 @@ for (var i = 0; i < 4; i++) {
 
 // realizo la jugada 
     switch (cartasMaestro[_valorIndiceINT][1]) {
-        // ... (todo el switch original, sin cambios) ...
         case "N" :
             switch (cartasMaestro[_valorIndiceINT][0]) {
                 case "1000" :
@@ -2223,6 +2321,11 @@ for (var i = 0; i < 4; i++) {
 // ajusto totales de jugador 
     calcularTotalJugadores();
 
+if (miAsientoLocal === _turnoJugador + 1) { // si es mi turno
+    if (evaluarCondicionFinalizar()) iniciarBlinkYBeep();
+    else detenerBlinkYBeep();
+}    
+
 // --- NUEVO: Actualizar columna RESULTADO con la diferencia ---
 for (var i = 0; i < 4; i++) {
     if (_jugadores[i][0] !== "Sin Asignar") {
@@ -2284,6 +2387,9 @@ function confirmarFinalizar() {
 
 function _ejecutarFinalizarJugada() {
     debugBws(" Boton Finalizar jugada / jugador ");
+    
+    // Detener cualquier parpadeo/beep activo al finalizar el turno
+    detenerBlinkYBeep();
     
     // 1. UI: Deshabilitamos el botón y reseteamos mazo
     document.getElementById("Finalizar").style = "background-color : grey;";
@@ -2829,6 +2935,7 @@ function hacerDraggable(elementoPrincipal, tirador) {
 }
 
 // ---------  Función para activar/desactivar el bloqueo visual según el turno
+
 function gestionarBloqueoPantalla(turnoActual, listaJugadores) {
     const modal = document.getElementById('ModalEsperaTurno');
     const texto = document.getElementById('TextoTurnoNombre');
@@ -2890,6 +2997,9 @@ function gestionarBloqueoPantalla(turnoActual, listaJugadores) {
         // --- NO ES MI TURNO ---
         modal.style.display = 'flex';
 
+        // Detener cualquier parpadeo/beep cuando el turno no es del jugador local
+        detenerBlinkYBeep();
+
         // Asignamos onclick del botón SALTEAR siempre que no es mi turno
         if (btnSaltear) {
             btnSaltear.onclick = function() {
@@ -2940,6 +3050,7 @@ function gestionarBloqueoPantalla(turnoActual, listaJugadores) {
         }
     }
 }
+
 //------------ Función para saltear a un jugador desconectado o que agotó su tiempo
 function ejecutarSalteoPorDesconexion() {
     console.log("Iniciando salteo de jugador...");
