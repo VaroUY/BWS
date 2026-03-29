@@ -29,107 +29,6 @@ var _finalizarBlinkInterval = null;   // ID del setInterval para el parpadeo
 var _beepInterval = null;             // ID del setInterval para el beep
 var _beepAudioContext = null;         // Contexto de audio para el beep (se inicializará al primer uso)
 
-// ============================================================
-// SISTEMA DE AUDIO BWS
-// Los navegadores modernos bloquean audio hasta que el usuario
-// interactúa con la página. Esta función desbloquea todos los
-// elementos <audio> en el primer gesto del usuario.
-// ============================================================
-var _audioDesbloqueado = false;
-
-function _desbloquearAudio() {
-    if (_audioDesbloqueado) return;
-    _audioDesbloqueado = true;
-    // Reanudar AudioContext del beep si existe
-    if (_beepAudioContext && _beepAudioContext.state === 'suspended') {
-        _beepAudioContext.resume();
-    }
-    // Reproducir y pausar cada elemento audio para desbloquear el permiso
-    var ids = ['audioModalBackend','audioModalCartas','audioModalVotacion','audioAbrirModal','audioCerrarModal'];
-    ids.forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) {
-            el.volume = 0;
-            var p = el.play();
-            if (p && p.then) {
-                p.then(function() { el.pause(); el.currentTime = 0; el.volume = 1; })
-                 .catch(function() { el.volume = 1; });
-            } else {
-                el.pause(); el.currentTime = 0; el.volume = 1;
-            }
-        }
-    });
-    console.log("BWS Audio: desbloqueado.");
-}
-
-function reproducirAudio(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    try {
-        el.currentTime = 0;
-        var p = el.play();
-        if (p && p.then) {
-            p.catch(function(e) { console.warn("BWS Audio: no se pudo reproducir " + id, e); });
-        }
-    } catch(e) {
-        console.warn("BWS Audio: error en " + id, e);
-    }
-}
-
-// Desbloquear audio en la primera interacción real del usuario
-document.addEventListener('click', _desbloquearAudio, { once: false });
-document.addEventListener('keydown', _desbloquearAudio, { once: false });
-// ============================================================
-
-// ============================================================
-// SPLASH SCREEN — se muestra antes de todo, el clic del usuario
-// desbloquea el audio y habilita el flujo normal del juego.
-// ============================================================
-var _splashSuperado = false;
-var _rolPendiente = null; // guarda el rol recibido mientras el splash está activo
-
-function _cerrarSplash() {
-    if (_splashSuperado) return;
-    _splashSuperado = true;
-    _desbloquearAudio();
-    var splash = document.getElementById('SplashScreen');
-    if (splash) {
-        splash.classList.add('saliendo');
-        setTimeout(function() {
-            splash.style.display = 'none';
-            // Si ya llegó el rol del servidor mientras el splash estaba activo, lo procesamos ahora
-            if (_rolPendiente) {
-                _aplicarRol(_rolPendiente);
-                _rolPendiente = null;
-            }
-        }, 500);
-    }
-}
-
-function _aplicarRol(data) {
-    var modalBackend = document.getElementById('ModalBackend');
-    var modalEspera  = document.getElementById('ModalEspera');
-    if (data.rol === 'host') {
-        if (modalEspera)  modalEspera.style.display  = 'none';
-        if (modalBackend) modalBackend.style.display = 'flex';
-        reproducirAudio('audioModalBackend');
-        console.log("Eres el Host. Configura la partida.");
-    } else if (data.rol === 'espera') {
-        if (modalBackend) modalBackend.style.display = 'none';
-        if (modalEspera)  modalEspera.style.display  = 'flex';
-        reproducirAudio('audioAbrirModal');
-        console.log("Esperando a que el Host inicie la partida...");
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    var splash = document.getElementById('SplashScreen');
-    if (splash) {
-        splash.addEventListener('click', _cerrarSplash);
-    }
-});
-// ============================================================
-
 
 // ---------------------------------------------------------------------------------------------//
 
@@ -219,16 +118,12 @@ function reproducirBeep() {
         var gain = _beepAudioContext.createGain();
         osc.connect(gain);
         gain.connect(_beepAudioContext.destination);
-
-osc.frequency.value = 1047; // Do alto, más brillante
-osc.type = 'triangle';      // onda triangular, más suave y campanera
-
-//        osc.frequency.value = 880; // frecuencia aguda
+        osc.frequency.value = 880; // frecuencia aguda
         gain.gain.value = 0.3;     // volumen moderado
-//        osc.type = 'sine';
+        osc.type = 'sine';
         osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.00001, _beepAudioContext.currentTime + 0.6);
-        osc.stop(_beepAudioContext.currentTime + 0.6);
+        gain.gain.exponentialRampToValueAtTime(0.00001, _beepAudioContext.currentTime + 0.2);
+        osc.stop(_beepAudioContext.currentTime + 0.2);
     } catch(e) {
         console.warn("No se pudo reproducir beep", e);
     }
@@ -246,7 +141,7 @@ function iniciarBlinkYBeep() {
             } else {
                 detenerBlinkYBeep(); // si ya no se cumple, detener todo
             }
-        }, 1000);
+        }, 2000);
     }
 }
 
@@ -372,13 +267,18 @@ socket.on('rolInicial', (data) => {
     // Ocultar preloader y mostrar el tablero
     ocultarPreloader();
 
-    // Si el splash todavía está activo, guardamos el rol y esperamos el clic
-    if (!_splashSuperado) {
-        _rolPendiente = data;
-        return;
+    const modalBackend = document.getElementById('ModalBackend');
+    const modalEspera = document.getElementById('ModalEspera');
+
+    if (data.rol === 'host') {
+        if (modalEspera) modalEspera.style.display = 'none';
+        if (modalBackend) modalBackend.style.display = 'flex';
+        console.log("Eres el Host. Configura la partida.");
+    } else if (data.rol === 'espera') {
+        if (modalBackend) modalBackend.style.display = 'none';
+        if (modalEspera) modalEspera.style.display = 'flex';
+        console.log("Esperando a que el Host inicie la partida...");
     }
-    // Si el splash ya fue superado, aplicamos el rol directamente
-    _aplicarRol(data);
 });
 
 // --- LOGICA DE LIBERACIÓN (Para usuarios en espera ) ---
@@ -410,7 +310,6 @@ socket.on('abrirSeleccionPersonaje', (jugadoresServer) => {
     const contenedor = document.getElementById('ContenedorBotonesSeleccion');
     modal.style.display = 'flex';
     contenedor.innerHTML = ""; 
-    reproducirAudio('audioAbrirModal');
 
     jugadoresServer.forEach((jug, index) => {
         if (jug.nombre !== "Sin Asignar") {
@@ -810,7 +709,6 @@ socket.on('actualizarHistorial', (historial) => {
 
 socket.on('mostrarCartaEspera', (indiceParametro) => {
     document.getElementById('ModalCartaEspera').style.display = 'flex';
-    reproducirAudio('audioAbrirModal');
     if (cartasMaestro && cartasMaestro[indiceParametro]) {
         document.getElementById('ImagenCartaEspera').src = cartasMaestro[indiceParametro][2];
     }
@@ -823,7 +721,6 @@ socket.on('mostrarCartaEspera', (indiceParametro) => {
 });
 
 socket.on('cerrarCartaEspera', () => {
-    reproducirAudio('audioCerrarModal');
     document.getElementById('ModalCartaEspera').style.display = 'none';
 });
 
@@ -960,7 +857,6 @@ socket.on('solicitarOpcionCartas', (data) => {
     }, 1000);
 
     modalVotacion.style.display = 'flex';
-    reproducirAudio('audioModalVotacion');
 
     // Asignar eventos (ya están con la referencia actualizada)
     const manejarVoto = (opcion) => {
@@ -1479,7 +1375,11 @@ function jugarCartasCompletar(_esDelMaso, _queCarta) {
     // muestro la carta que salio en el modal antes de abrirlo
     
     // === REPRODUCIR SONIDO ANTES DE ABRIR EL MODAL ===
-    reproducirAudio('audioModalCartas');
+    const audio = document.getElementById('modalWhooshAudio');
+    if (audio) {
+        audio.currentTime = 0; // reiniciar si ya estaba sonando
+        audio.play().catch(e => console.log("Audio no pudo reproducirse:", e));
+    }
     // ==============================================
     
     modal.style.display = "flex"; 
@@ -2473,7 +2373,6 @@ function finalizarJugada() {
             if (!document.getElementById("M_Radio").disabled) _preciosDisponibles.push(_valorMcDonalds);
             var _precioMinimo = Math.min(..._preciosDisponibles);
             if (_miCash >= _precioMinimo) {
-                reproducirAudio('audioAbrirModal');
                 document.getElementById('ModalAdvertenciaFinalizar').style.display = 'flex';
                 return;
             }
@@ -2483,7 +2382,6 @@ function finalizarJugada() {
 }
 
 function confirmarFinalizar() {
-    reproducirAudio('audioCerrarModal');
     document.getElementById('ModalAdvertenciaFinalizar').style.display = 'none';
     _ejecutarFinalizarJugada();
 }
@@ -3367,7 +3265,6 @@ function abrirHistorial() {
     });
 
     document.getElementById('ModalHistorial').style.display = 'flex';
-    reproducirAudio('audioAbrirModal');
 }
 //
 // -------------------- drop down personalizado 
@@ -3402,7 +3299,6 @@ function mostrarGameOver(ganador) {
     contenido.innerHTML = `<div style="font-size: 28px; color: #ffc107;">🏆 GANADOR 🏆</div><div style="font-size: 32px; margin-top: 10px;">${ganador}</div>`;
     
     modal.style.display = 'flex';
-    reproducirAudio('audioAbrirModal');
     
     // Centrar el contenedor arrastrable
     const container = document.getElementById('GameOverContainer');
@@ -3451,7 +3347,6 @@ function mostrarQuiebreBanca(perdedores) {
 }
 
 function cerrarHistorial() {
-    reproducirAudio('audioCerrarModal');
     document.getElementById('ModalHistorial').style.display = 'none';
 }
 

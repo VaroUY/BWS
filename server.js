@@ -303,6 +303,29 @@ function procesarVotos() {
 
     if (algunMeQuedo) {
         console.log("Algún jugador eligió 'Me quedo'. Iniciando partida con manos actuales.");
+
+        // ---- REORDENAMIENTO ALEATORIO DE JUGADORES ----
+        // Solo reordena si el host NO marcó "Forzar el orden actual"
+        if (!estadoJuego.forzarOrden) {
+            console.log("Reordenando jugadores aleatoriamente...");
+            // Extraemos solo los jugadores activos (no "Sin Asignar")
+            const jugadoresActivos = indicesActivos.map(idx => estadoJuego.jugadores[idx]);
+            // Fisher-Yates sobre el array de jugadores activos
+            for (let i = jugadoresActivos.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [jugadoresActivos[i], jugadoresActivos[j]] = [jugadoresActivos[j], jugadoresActivos[i]];
+            }
+            // Reubicamos los jugadores reordenados en los mismos índices que antes
+            for (let i = 0; i < indicesActivos.length; i++) {
+                estadoJuego.jugadores[indicesActivos[i]] = jugadoresActivos[i];
+            }
+            // Recalculamos indicesActivos por si cambió algo (por seguridad)
+            console.log("Nuevo orden de jugadores:", indicesActivos.map(idx => estadoJuego.jugadores[idx].nombre));
+        } else {
+            console.log("Orden forzado por el host. No se reordena.");
+        }
+        // -----------------------------------------------
+
         const estadoParaEnviar = obtenerEstadoParaCliente();
         estadoParaEnviar.manos = {};
         for (let i = 0; i < indicesActivos.length; i++) {
@@ -391,8 +414,19 @@ io.on('connection', (socket) => {
     });
 
     // RECEPCIÓN DE NOMBRES Y APERTURA DE SELECCIÓN para id vs jugdor ---
-socket.on('configurarNombresPartida', (nombresRecibidos) => {
-    console.log("Nombres recibidos del Host:", nombresRecibidos);
+socket.on('configurarNombresPartida', (datosRecibidos) => {
+    // Compatibilidad: acepta tanto array plano como objeto {nombres, forzarOrden}
+    let nombresRecibidos, forzarOrden;
+    if (Array.isArray(datosRecibidos)) {
+        nombresRecibidos = datosRecibidos;
+        forzarOrden = false;
+    } else {
+        nombresRecibidos = datosRecibidos.nombres;
+        forzarOrden = datosRecibidos.forzarOrden || false;
+    }
+    console.log("Nombres recibidos del Host:", nombresRecibidos, "| Forzar orden:", forzarOrden);
+    // Guardar el flag para usarlo en procesarVotos
+    estadoJuego.forzarOrden = forzarOrden;
     // 1. Reseteamos la tabla de jugadores del servidor asegurando la estructura original
     for (let i = 0; i < 4; i++) {
         estadoJuego.jugadores[i].nombre = "Sin Asignar";
@@ -749,7 +783,8 @@ socket.on('resetGame', () => {
             j2: [4000],
             j3: [4000],
             j4: [4000]
-        }
+        },
+        forzarOrden: false
     };
 
     // Resetear variable de partida iniciada
