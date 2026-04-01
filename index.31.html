@@ -578,39 +578,21 @@
       80%  { transform: translateY(4px);   opacity: 1; }
       100% { transform: translateY(0px);   opacity: 1; }
     }
-    @keyframes bws-modal-up-out {
-      0%   { transform: translateY(0px);   opacity: 1; }
-      30%  { transform: translateY(-6px);  opacity: 1; }
-      100% { transform: translateY(120%);  opacity: 0; }
-    }
     @keyframes bws-modal-down {
       0%   { transform: translateY(-120%); opacity: 0; }
       60%  { transform: translateY(8px);   opacity: 1; }
       80%  { transform: translateY(-4px);  opacity: 1; }
       100% { transform: translateY(0px);   opacity: 1; }
     }
-    @keyframes bws-modal-down-out {
-      0%   { transform: translateY(0px);    opacity: 1; }
-      30%  { transform: translateY(6px);    opacity: 1; }
-      100% { transform: translateY(-120%);  opacity: 0; }
-    }
-    .bws-modal-up      { animation: bws-modal-up      0.55s cubic-bezier(0.22,1,0.36,1) both; }
-    .bws-modal-up-out  { animation: bws-modal-up-out  0.38s cubic-bezier(0.55,0,0.78,0) both; }
-    .bws-modal-down    { animation: bws-modal-down    0.55s cubic-bezier(0.22,1,0.36,1) both; }
-    .bws-modal-down-out{ animation: bws-modal-down-out 0.38s cubic-bezier(0.55,0,0.78,0) both; }
+    .bws-modal-up   { animation: bws-modal-up   0.55s cubic-bezier(0.22,1,0.36,1) both; }
+    .bws-modal-down { animation: bws-modal-down 0.55s cubic-bezier(0.22,1,0.36,1) both; }
     @keyframes bws-modal-center-down {
       0%   { transform: translate(-50%, calc(-50% - 120px)); opacity: 0; }
       60%  { transform: translate(-50%, calc(-50% + 8px));   opacity: 1; }
       80%  { transform: translate(-50%, calc(-50% - 4px));   opacity: 1; }
       100% { transform: translate(-50%, -50%);               opacity: 1; }
     }
-    @keyframes bws-modal-center-down-out {
-      0%   { transform: translate(-50%, -50%);               opacity: 1; }
-      30%  { transform: translate(-50%, calc(-50% + 6px));   opacity: 1; }
-      100% { transform: translate(-50%, calc(-50% - 120px)); opacity: 0; }
-    }
-    .bws-modal-center-down     { animation: bws-modal-center-down     0.55s cubic-bezier(0.22,1,0.36,1) both; }
-    .bws-modal-center-down-out { animation: bws-modal-center-down-out 0.38s cubic-bezier(0.55,0,0.78,0) both; }
+    .bws-modal-center-down { animation: bws-modal-center-down 0.55s cubic-bezier(0.22,1,0.36,1) both; }
     #ContenidoHistorial::-webkit-scrollbar { width: 6px; }
     #ContenidoHistorial::-webkit-scrollbar-track { background: #0a0a0a; border-radius: 4px; }
     #ContenidoHistorial::-webkit-scrollbar-thumb { background: #7a5c00; border-radius: 4px; }
@@ -696,7 +678,6 @@
   <audio id="audioModalVotacion" preload="auto" style="display:none;"><source src="_audios/audioModalVotacion.mp3" type="audio/mpeg"></audio>
   <audio id="audioAbrirModal"    preload="auto" style="display:none;"><source src="_audios/audioAbrirModal.mp3"    type="audio/mpeg"></audio>
   <audio id="audioCerrarModal"   preload="auto" style="display:none;"><source src="_audios/audioCerrarModal.mp3"   type="audio/mpeg"></audio>
-  <audio id="audioTuTurnoModal"  preload="auto" style="display:none;"><source src="_audios/audioTuTurnoModal.mp3"  type="audio/mpeg"></audio>
 </div>
   <div id="ContenedorGeneral">
     <!-- ==================== LOGO TABLERO ==================== -->
@@ -758,7 +739,7 @@
       <p id="MInteractivoTituloInteractivo">TRANSACCIONES</p>
       <!-- MODAL HISTORIAL -->
 <div id="ModalHistorial" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
-  <div id="ModalHistorialInterior" class="bws-modal-up" style="background:#000000; border:1px solid #7a5c00; border-radius:14px; padding:28px 32px; width:680px; max-width:90vw; height:60vh; display:flex; flex-direction:column; box-shadow: 0 0 40px rgba(255,193,7,0.1), inset 0 1px 0 rgba(255,193,7,0.06); position:relative;">
+  <div class="bws-modal-up" style="background:#000000; border:1px solid #7a5c00; border-radius:14px; padding:28px 32px; width:680px; max-width:90vw; height:60vh; display:flex; flex-direction:column; box-shadow: 0 0 40px rgba(255,193,7,0.1), inset 0 1px 0 rgba(255,193,7,0.06); position:relative;">
     <!-- Botón cerrar solo X en esquina superior derecha -->
     <button onclick="cerrarHistorial()" style="position:absolute; top:12px; right:12px; background:transparent; color:#ffc107; border:1px solid #7a5c00; border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center;">✕</button>
     
@@ -882,7 +863,7 @@
 
     <!-- MODAL ADVERTENCIA FINALIZAR -->
     <div id="ModalAdvertenciaFinalizar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
-      <div id="ModalAdvertenciaFinalizarInterior" class="bws-modal-up" style="background:#000000; border:1px solid #89152b; border-radius:14px; padding:32px 36px; width:420px; text-align:center;">
+      <div class="bws-modal-up" style="background:#000000; border:1px solid #89152b; border-radius:14px; padding:32px 36px; width:420px; text-align:center;">
         <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #89152b, transparent); margin: 0 auto 20px auto;"></div>
         <div style="margin-bottom:16px;"><svg fill="none" height="36" viewBox="0 0 24 24" width="36"><path d="M12 3L2 21h20L12 3z" stroke="#ffc107" stroke-linejoin="round" stroke-width="1.5"/><path d="M12 9v5" stroke="#ffc107" stroke-linecap="round" stroke-width="1.5"/><circle cx="12" cy="17" fill="#ffc107" r="0.5" stroke="#ffc107" stroke-width="1.5"/></svg></div>
         <h2 style="color:#ffffff; font-size:20px; letter-spacing:3px;">ATENCIÓN</h2>
@@ -891,7 +872,7 @@
         <p id="TextoAdvertenciaFinalizar" style="color:#8ca0b8; font-size:16px; font-weight:600; line-height:1.7; margin-bottom:28px;">Todavía tenés efectivo disponible<br/>para comprar acciones.<br/>¿Deseas finalizar igual?</p>
         <div style="display:flex; justify-content:center; gap:16px;">
           <button onclick="confirmarFinalizar()" style="background:#89152b; color:white; border:1px solid #89152b; border-radius:8px; padding:10px 28px; cursor:pointer;">SÍ, FINALIZAR</button>
-          <button onclick="reproducirAudio('audioCerrarModal'); cerrarModalConAnimacion('ModalAdvertenciaFinalizar','ModalAdvertenciaFinalizarInterior','bws-modal-up-out',null)" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:8px; padding:10px 28px; cursor:pointer;">NO, VOLVER</button>
+          <button onclick="reproducirAudio('audioCerrarModal'); document.getElementById('ModalAdvertenciaFinalizar').style.display='none'" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:8px; padding:10px 28px; cursor:pointer;">NO, VOLVER</button>
         </div>
         <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #89152b, transparent); margin: 20px auto 0 auto;"></div>
       </div>
@@ -947,14 +928,14 @@
 
     <!-- MODAL CARTA EN ESPERA -->
     <div id="ModalCartaEspera" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:998; background:rgba(0,0,0,0); justify-content:center; align-items:center;">
-      <div id="ModalCartaEsperaInterior" class="bws-modal-down" style="background:#000000; border:1px solid #1e3a5f; border-radius:14px; padding:24px 30px 28px 30px; text-align:center;">
+      <div id="ModalCartaEsperaInterior" style="background:#000000; border:1px solid #1e3a5f; border-radius:14px; padding:24px 30px 28px 30px; text-align:center;">
         <div style="width:60px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 14px auto;"></div>
         <h1 style="font-size:32px; color:#ffffff; font-family:'Rajdhani',sans-serif; font-weight:400; letter-spacing:4px; margin-bottom:14px;">CARTA JUGADA</h1>
         <div style="position:relative; display:inline-block; margin-bottom:16px;">
           <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:156px; height:208px; background:radial-gradient(ellipse at center, rgba(74,158,255,0.12) 0%, transparent 70%); pointer-events:none;"></div>
           <img id="ImagenCartaEspera" src="" style="position:relative; width:117px; border-radius:6px;"/>
         </div>
-        <div style="margin-top:4px;"><button onclick="reproducirAudio('audioCerrarModal'); cerrarModalConAnimacion('ModalCartaEspera','ModalCartaEsperaInterior','bws-modal-down-out',null)" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:6px; padding:4px 16px; cursor:pointer;">✕ CERRAR</button></div>
+        <div style="margin-top:4px;"><button onclick="reproducirAudio('audioCerrarModal'); document.getElementById('ModalCartaEspera').style.display='none'" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:6px; padding:4px 16px; cursor:pointer;">✕ CERRAR</button></div>
         <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 12px auto 0 auto;"></div>
       </div>
     </div>
@@ -978,54 +959,8 @@
     <div style="width:60%; height:1px; background:linear-gradient(90deg, transparent, #ffc107, transparent); margin: 20px auto 0 auto;"></div>
   </div>
 </div>  
-<!-- MODAL CONFIRMAR CARTA DE MANO -->
-<div id="ModalConfirmarCartaMano" style="display:none; position:absolute; top:0; left:0; width:1440px; height:820px; z-index:5000; background:rgba(0,0,0,0); align-items:center; justify-content:center;">
-  <div id="ModalConfirmarCartaManoInterior" style="position:absolute; background:#000000; border:1px solid #5b2d8e; border-radius:14px; padding:32px 40px; width:380px; text-align:center; box-shadow:0 0 40px rgba(168,85,247,0.25), inset 0 1px 0 rgba(168,85,247,0.1);">
-    <div style="width:160px; height:2px; background:linear-gradient(90deg,transparent,#a855f7,transparent); margin:0 auto 18px auto;"></div>
-    <h2 style="color:#ffffff; font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; letter-spacing:4px; margin-bottom:20px;">CARTA A JUGAR</h2>
-    <div style="position:relative; display:inline-block; margin-bottom:24px;">
-      <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:266px; background:radial-gradient(ellipse at center,rgba(168,85,247,0.15) 0%,transparent 70%); pointer-events:none;"></div>
-      <img id="ModalConfirmarCartaImagen" src="" style="position:relative; width:117px; border-radius:8px; box-shadow:0 0 20px rgba(168,85,247,0.4);"/>
-    </div>
-    <div style="width:100%; height:1px; background:linear-gradient(90deg,transparent,#5b2d8e,transparent); margin-bottom:22px;"></div>
-    <div style="display:flex; gap:12px; justify-content:center;">
-      <button id="BtnConfirmarCartaMano" style="flex:1; padding:11px 0; background:#5b2d8e; color:#ffffff; border:1px solid #a855f7; border-radius:8px; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px; cursor:pointer; transition:all 0.2s;">CONTINUAR</button>
-      <button id="BtnCancelarCartaMano"  style="flex:1; padding:11px 0; background:transparent; color:#a855f7; border:1px solid #5b2d8e; border-radius:8px; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px; cursor:pointer; transition:all 0.2s;">ELEGIR OTRA</button>
-    </div>
-    <div style="width:80px; height:1px; background:linear-gradient(90deg,transparent,#5b2d8e,transparent); margin:18px auto 0 auto;"></div>
   </div>
-</div>
 
-<!-- MODAL TU TURNO -->
-<div id="ModalTuTurno" style="display:none; position:absolute; top:0; left:0; width:1440px; height:820px; z-index:9000; pointer-events:none; align-items:center; justify-content:center;">
-  <div id="ModalTuTurnoInterior" style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; height:100%;">
-    <div id="ModalTuTurnoTexto" style="font-family:'Impact','Arial Black',sans-serif; font-size:246px; font-weight:300; color:#ffc107; letter-spacing:8px; text-align:center; line-height:1; white-space:nowrap; position:relative; z-index:2; text-shadow: 0 0 60px rgba(255,193,7,0.8), 0 0 120px rgba(255,193,7,0.4);">TU TURNO</div>
-  </div>
-</div>
-<style>
-  @keyframes tuTurnoEntrada {
-    0%   { opacity:0; transform:scale(0.6); }
-    60%  { opacity:1; transform:scale(1.06); }
-    80%  { opacity:1; transform:scale(0.97); }
-    100% { opacity:1; transform:scale(1); }
-  }
-  @keyframes tuTurnoSalida {
-    0%   { opacity:1; transform:scale(1); }
-    100% { opacity:0; transform:scale(1.15); }
-  }
-  #ModalTuTurnoInterior.entrando { animation: tuTurnoEntrada 0.6s cubic-bezier(0.22,1,0.36,1) both; }
-  #ModalTuTurnoInterior.saliendo { animation: tuTurnoSalida  0.4s ease-in both; }
-  /* Fondo radial que se desvanece hacia los bordes */
-  #ModalTuTurno::before {
-    content: '';
-    position: absolute;
-    top:0; left:0; width:100%; height:100%;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 75%);
-    pointer-events: none;
-  }
-</style>
-
-</div><!-- cierre ContenedorGeneral -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
   <script src="_js/bws.js"></script>

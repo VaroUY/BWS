@@ -37,59 +37,6 @@ var _beepAudioContext = null;         // Contexto de audio para el beep (se inic
 // ============================================================
 var _audioDesbloqueado = false;
 
-// ============================================================
-// MODAL TU TURNO
-// ============================================================
-var _tuTurnoTimeout = null;
-
-function mostrarModalTuTurno() {
-    var modal    = document.getElementById('ModalTuTurno');
-    var interior = document.getElementById('ModalTuTurnoInterior');
-    if (!modal || !interior) return;
-
-    // Limpiar timeout anterior por si acaso
-    if (_tuTurnoTimeout) { clearTimeout(_tuTurnoTimeout); _tuTurnoTimeout = null; }
-
-    // Resetear clases y mostrar
-    interior.classList.remove('entrando','saliendo');
-    void interior.offsetWidth;
-    interior.classList.add('entrando');
-    modal.style.display = 'flex';
-    modal.style.pointerEvents = 'all';
-    reproducirAudio('audioTuTurnoModal');
-
-    // Cerrar con mouse o teclado
-    function cerrarTuTurno() {
-        quitarListeners();
-        _cerrarModalTuTurno();
-    }
-    function quitarListeners() {
-        document.removeEventListener('mousemove', cerrarTuTurno);
-        document.removeEventListener('keydown',   cerrarTuTurno);
-    }
-    // Pequeño delay para que no se cierre instantáneamente al abrir
-    setTimeout(function() {
-        document.addEventListener('mousemove', cerrarTuTurno);
-        document.addEventListener('keydown',   cerrarTuTurno);
-    }, 400);
-}
-
-function _cerrarModalTuTurno() {
-    var modal    = document.getElementById('ModalTuTurno');
-    var interior = document.getElementById('ModalTuTurnoInterior');
-    if (!modal || !interior) return;
-    modal.style.pointerEvents = 'none';
-    interior.classList.remove('entrando');
-    void interior.offsetWidth;
-    interior.classList.add('saliendo');
-    interior.addEventListener('animationend', function handler() {
-        interior.removeEventListener('animationend', handler);
-        modal.style.display = 'none';
-        interior.classList.remove('saliendo');
-    });
-}
-// ============================================================
-
 function _desbloquearAudio() {
     if (_audioDesbloqueado) return;
     _audioDesbloqueado = true;
@@ -98,7 +45,7 @@ function _desbloquearAudio() {
         _beepAudioContext.resume();
     }
     // Reproducir y pausar cada elemento audio para desbloquear el permiso
-    var ids = ['audioModalBackend','audioModalCartas','audioModalVotacion','audioAbrirModal','audioCerrarModal','audioTuTurnoModal'];
+    var ids = ['audioModalBackend','audioModalCartas','audioModalVotacion','audioAbrirModal','audioCerrarModal'];
     ids.forEach(function(id) {
         var el = document.getElementById(id);
         if (el) {
@@ -735,11 +682,6 @@ socket.on('actualizarTurno', (data) => {
     document.getElementById("Jugador" + data.turno + "_V_Linea").style = "border-style: solid; border-color: red; border-width: 2px;";
     // 8. INICIAR TEMPORIZADOR
     iniciarTimerTurno();
-
-    // 9. MODAL TU TURNO — solo al jugador que le toca
-    if (miAsientoLocal === data.turno) {
-        mostrarModalTuTurno();
-    }
 });
 
 // ---------------------- OIDOS : Todos los valores del juego -------------------------------------------------------//
@@ -882,7 +824,7 @@ socket.on('mostrarCartaEspera', (indiceParametro) => {
 
 socket.on('cerrarCartaEspera', () => {
     reproducirAudio('audioCerrarModal');
-    cerrarModalConAnimacion('ModalCartaEspera', 'ModalCartaEsperaInterior', 'bws-modal-down-out', null);
+    document.getElementById('ModalCartaEspera').style.display = 'none';
 });
 
 // ------------------ reseteo de partida 
@@ -1053,94 +995,11 @@ function enviarVoto(opcion) {
 }
 
 function cerrarModalVotacion() {
+    if (modalVotacion) modalVotacion.style.display = 'none';
     if (temporizadorVotacion) clearInterval(temporizadorVotacion);
+    // Limpiar variables
     votoEnviado = false;
-    if (modalVotacion && modalVotacion.style.display !== 'none') {
-        var interior = modalVotacion.querySelector('.bws-modal-up, [class*="bws-modal"]');
-        if (interior) {
-            interior.classList.remove('bws-modal-up','bws-modal-down','bws-modal-up-out','bws-modal-down-out');
-            void interior.offsetWidth;
-            interior.classList.add('bws-modal-up-out');
-            interior.addEventListener('animationend', function handler() {
-                interior.removeEventListener('animationend', handler);
-                modalVotacion.style.display = 'none';
-                interior.classList.remove('bws-modal-up-out');
-            });
-        } else {
-            modalVotacion.style.display = 'none';
-        }
-    }
 }
-
-// ============================================================
-// UTILIDAD: cerrar modal con animación de salida
-// claseInterior: clase CSS del elemento interior animado
-// animOut: clase de animación de salida a aplicar
-// fnDespues: callback que se ejecuta al terminar (oculta el modal)
-// ============================================================
-function cerrarModalConAnimacion(idModal, idInterior, animOut, fnDespues) {
-    var interior = document.getElementById(idInterior);
-    var modal    = document.getElementById(idModal);
-    if (!interior || !modal) { if (fnDespues) fnDespues(); return; }
-    interior.classList.remove('bws-modal-up','bws-modal-down','bws-modal-center-down',
-                               'bws-modal-up-out','bws-modal-down-out','bws-modal-center-down-out');
-    void interior.offsetWidth;
-    interior.classList.add(animOut);
-    function handler() {
-        interior.removeEventListener('animationend', handler);
-        modal.style.display = 'none';
-        interior.classList.remove(animOut);
-        if (fnDespues) fnDespues();
-    }
-    interior.addEventListener('animationend', handler);
-}
-
-// ============================================================
-// MODAL CONFIRMAR CARTA DE MANO
-// ============================================================
-var _cartaManoConfirmCallback = null;
-
-function abrirModalConfirmarCartaMano(urlCarta, onConfirmar) {
-    _cartaManoConfirmCallback = onConfirmar;
-    var img = document.getElementById('ModalConfirmarCartaImagen');
-    var modal = document.getElementById('ModalConfirmarCartaMano');
-    var interior = document.getElementById('ModalConfirmarCartaManoInterior');
-    if (img) img.src = urlCarta;
-    if (interior) {
-        interior.classList.remove('bws-modal-up-out','bws-modal-up');
-        void interior.offsetWidth;
-        interior.classList.add('bws-modal-up');
-    }
-    if (modal) modal.style.display = 'flex';
-    reproducirAudio('audioAbrirModal');
-    hacerDraggable(interior, interior);
-}
-
-function cerrarModalConfirmarCarta(continuar) {
-    reproducirAudio('audioCerrarModal');
-    cerrarModalConAnimacion(
-        'ModalConfirmarCartaMano',
-        'ModalConfirmarCartaManoInterior',
-        'bws-modal-up-out',
-        function() {
-            if (continuar && _cartaManoConfirmCallback) {
-                _cartaManoConfirmCallback();
-                _cartaManoConfirmCallback = null;
-            } else {
-                _cartaManoConfirmCallback = null;
-            }
-        }
-    );
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    var btnConfirmar = document.getElementById('BtnConfirmarCartaMano');
-    var btnCancelar  = document.getElementById('BtnCancelarCartaMano');
-    if (btnConfirmar) btnConfirmar.addEventListener('click', function() { cerrarModalConfirmarCarta(true);  });
-    if (btnCancelar)  btnCancelar.addEventListener('click',  function() { cerrarModalConfirmarCarta(false); });
-});
-
-// ============================================================
 
 // ---------------------------- FUNCIÓN PARA ENVIAR DATOS AL SERVIDOR -----------------------------------//
 
@@ -2625,9 +2484,8 @@ function finalizarJugada() {
 
 function confirmarFinalizar() {
     reproducirAudio('audioCerrarModal');
-    cerrarModalConAnimacion('ModalAdvertenciaFinalizar', 'ModalAdvertenciaFinalizarInterior', 'bws-modal-up-out', function() {
-        _ejecutarFinalizarJugada();
-    });
+    document.getElementById('ModalAdvertenciaFinalizar').style.display = 'none';
+    _ejecutarFinalizarJugada();
 }
 
 function _ejecutarFinalizarJugada() {
@@ -2741,11 +2599,11 @@ function mostrarCartasJugador() {
 
 function jugadaCartaDeLaMano(_CartaElegida) {
     console.log("jugadaCartaDeLaMano llamada con carta:", _CartaElegida, "miIndice:", miAsientoLocal - 1, "_jugarCartas:", _jugarCartas);
-
+ 
     var _miIndice = miAsientoLocal - 1;
-
     if (_valorIndice > 67) {
         document.getElementById('CartaMaso').src = "_imagenes/MasoVacio.png";
+        // Deshabilitar mazo y cartas de mano
         document.getElementById('CartaMaso').onclick = null;
         document.getElementById('CartaMaso').style.cursor = 'not-allowed';
         document.getElementById('CartaMaso1').onclick = null;
@@ -2758,48 +2616,41 @@ function jugadaCartaDeLaMano(_CartaElegida) {
         document.getElementById('CartaMaso4').style.cursor = 'not-allowed';
         return;
     }
-
-    if (_jugadores[_miIndice][_CartaElegida+1] && _jugarCartas) {
-        // Calcular índice real de la carta
+    else if (_jugadores[_miIndice][_CartaElegida+1] && _jugarCartas) {
         var _auxJ = _miIndice;
-        if (_miIndice == 1){ _auxJ = _auxJ + 3; }
-        else if (_miIndice == 2){ _auxJ = _auxJ + 6; }
-        else if (_miIndice == 3){ _auxJ = _auxJ + 9; }
-
-        var urlCarta = '';
-        if (window._misCartasURLs && window._misCartasURLs.length === 4) {
-            urlCarta = window._misCartasURLs[_CartaElegida];
-        } else {
-            urlCarta = cartasMaestro[_auxJ + _CartaElegida][2];
+        if (_miIndice == 1){
+            _auxJ = _auxJ + 3;
+        } else if (_miIndice == 2){
+            _auxJ = _auxJ + 6;
+        } else if (_miIndice == 3){
+            _auxJ = _auxJ + 9;
         }
-
-        // Mostrar modal de confirmación ANTES de ejecutar la lógica
-        abrirModalConfirmarCartaMano(urlCarta, function() {
-            // --- LÓGICA ORIGINAL (se ejecuta solo si el user confirma) ---
-            document.getElementById("Finalizar").style = "background-color : red;";
-            document.getElementById("Finalizar").disabled = false;
-            document.getElementById('CartaMaso'+String(_CartaElegida+1)).src = "_imagenes/CartaEjemploAtras.png";
-            _jugadores[_miIndice][_CartaElegida+1] = false;
-            _jugarCartas = false;
-            _jugoDeLaMano = true;
-            document.getElementById("CartaMaso1").disabled = true;
-            document.getElementById("CartaMaso2").disabled = true;
-            document.getElementById("CartaMaso3").disabled = true;
-            document.getElementById("CartaMaso4").disabled = true;
-            document.getElementById('CartaJugada').src = cartasMaestro[_auxJ+_CartaElegida][2];
-            socket.emit('actualizarCartasMano', {
-                indiceJugador: _miIndice,
-                c1: _jugadores[_miIndice][1],
-                c2: _jugadores[_miIndice][2],
-                c3: _jugadores[_miIndice][3],
-                c4: _jugadores[_miIndice][4],
-                indiceCarta: _auxJ + _CartaElegida
-            });
-            socket.emit('mostrarCartaEspera', _auxJ+_CartaElegida);
-            jugarCartasCompletar(false, _auxJ+_CartaElegida);
+        var _empresaElegida;
+        document.getElementById("Finalizar").style = "background-color : red;";
+        document.getElementById("Finalizar").disabled = false;
+        document.getElementById('CartaMaso'+String(_CartaElegida+1)).src = "_imagenes/CartaEjemploAtras.png";
+        _jugadores[_miIndice][_CartaElegida+1] = false;
+        _jugarCartas = false; 
+        _jugoDeLaMano = true;
+        document.getElementById("CartaMaso1").disabled = true;
+        document.getElementById("CartaMaso2").disabled = true;
+        document.getElementById("CartaMaso3").disabled = true;
+        document.getElementById("CartaMaso4").disabled = true;
+        document.getElementById('CartaJugada').src = cartasMaestro[_auxJ+_CartaElegida][2];
+        // Avisamos al servidor inmediatamente el estado de cartas de la mano
+        socket.emit('actualizarCartasMano', {
+            indiceJugador: _miIndice,
+            c1: _jugadores[_miIndice][1],
+            c2: _jugadores[_miIndice][2],
+            c3: _jugadores[_miIndice][3],
+            c4: _jugadores[_miIndice][4],
+            indiceCarta: _auxJ + _CartaElegida
         });
-
+        // Avisamos a los demas que muestren la carta en espera
+        socket.emit('mostrarCartaEspera', _auxJ+_CartaElegida);
+        jugarCartasCompletar(false, _auxJ+_CartaElegida);
     } else {
+        // Si ya jugó carta, deshabilitar mazo y cartas
         document.getElementById('CartaMaso').onclick = null;
         document.getElementById('CartaMaso').style.cursor = 'not-allowed';
         document.getElementById('CartaMaso1').onclick = null;
@@ -3151,43 +3002,41 @@ function grafcaLineal() {
 // ------------------------------------------------------ LOGICA PARA ARRASTRAR EL MODAL --------------------------------------------------//
 function hacerDraggable(elementoPrincipal, tirador) {
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
+    
+    // El 'tirador' es el título de donde agarramos
     tirador.onmousedown = dragMouseDown;
-
-    function getEscala() {
-        var contenedor = document.getElementById('ContenedorGeneral');
-        if (!contenedor) return 1;
-        var transform = contenedor.style.transform;
-        var match = transform.match(/scale\(([^)]+)\)/);
-        return match ? parseFloat(match[1]) : 1;
-    }
 
     function dragMouseDown(e) {
         e = e || window.event;
         e.preventDefault();
+        // Obtener posición del ratón al inicio
         pos3 = e.clientX;
         pos4 = e.clientY;
         document.onmouseup = closeDragElement;
+        // Llamar a la función cada vez que el ratón se mueve
         document.onmousemove = elementDrag;
     }
 
     function elementDrag(e) {
         e = e || window.event;
         e.preventDefault();
-        var escala = getEscala();
-        pos1 = (pos3 - e.clientX) / escala;
-        pos2 = (pos4 - e.clientY) / escala;
+        // Calcular nueva posición
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
         pos3 = e.clientX;
         pos4 = e.clientY;
-        elementoPrincipal.style.top  = (elementoPrincipal.offsetTop  - pos2) + "px";
+        // Setear la nueva posición al elemento
+        elementoPrincipal.style.top = (elementoPrincipal.offsetTop - pos2) + "px";
         elementoPrincipal.style.left = (elementoPrincipal.offsetLeft - pos1) + "px";
     }
 
     function closeDragElement() {
+        // Detener el movimiento cuando se suelta el botón
         document.onmouseup = null;
         document.onmousemove = null;
     }
 }
+
 // ---------  Función para activar/desactivar el bloqueo visual según el turno
 
 function gestionarBloqueoPantalla(turnoActual, listaJugadores) {
@@ -3603,7 +3452,7 @@ function mostrarQuiebreBanca(perdedores) {
 
 function cerrarHistorial() {
     reproducirAudio('audioCerrarModal');
-    cerrarModalConAnimacion('ModalHistorial', 'ModalHistorialInterior', 'bws-modal-up-out', null);
+    document.getElementById('ModalHistorial').style.display = 'none';
 }
 
 // ============================================================

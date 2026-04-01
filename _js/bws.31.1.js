@@ -37,59 +37,6 @@ var _beepAudioContext = null;         // Contexto de audio para el beep (se inic
 // ============================================================
 var _audioDesbloqueado = false;
 
-// ============================================================
-// MODAL TU TURNO
-// ============================================================
-var _tuTurnoTimeout = null;
-
-function mostrarModalTuTurno() {
-    var modal    = document.getElementById('ModalTuTurno');
-    var interior = document.getElementById('ModalTuTurnoInterior');
-    if (!modal || !interior) return;
-
-    // Limpiar timeout anterior por si acaso
-    if (_tuTurnoTimeout) { clearTimeout(_tuTurnoTimeout); _tuTurnoTimeout = null; }
-
-    // Resetear clases y mostrar
-    interior.classList.remove('entrando','saliendo');
-    void interior.offsetWidth;
-    interior.classList.add('entrando');
-    modal.style.display = 'flex';
-    modal.style.pointerEvents = 'all';
-    reproducirAudio('audioTuTurnoModal');
-
-    // Cerrar con mouse o teclado
-    function cerrarTuTurno() {
-        quitarListeners();
-        _cerrarModalTuTurno();
-    }
-    function quitarListeners() {
-        document.removeEventListener('mousemove', cerrarTuTurno);
-        document.removeEventListener('keydown',   cerrarTuTurno);
-    }
-    // Pequeño delay para que no se cierre instantáneamente al abrir
-    setTimeout(function() {
-        document.addEventListener('mousemove', cerrarTuTurno);
-        document.addEventListener('keydown',   cerrarTuTurno);
-    }, 400);
-}
-
-function _cerrarModalTuTurno() {
-    var modal    = document.getElementById('ModalTuTurno');
-    var interior = document.getElementById('ModalTuTurnoInterior');
-    if (!modal || !interior) return;
-    modal.style.pointerEvents = 'none';
-    interior.classList.remove('entrando');
-    void interior.offsetWidth;
-    interior.classList.add('saliendo');
-    interior.addEventListener('animationend', function handler() {
-        interior.removeEventListener('animationend', handler);
-        modal.style.display = 'none';
-        interior.classList.remove('saliendo');
-    });
-}
-// ============================================================
-
 function _desbloquearAudio() {
     if (_audioDesbloqueado) return;
     _audioDesbloqueado = true;
@@ -98,7 +45,7 @@ function _desbloquearAudio() {
         _beepAudioContext.resume();
     }
     // Reproducir y pausar cada elemento audio para desbloquear el permiso
-    var ids = ['audioModalBackend','audioModalCartas','audioModalVotacion','audioAbrirModal','audioCerrarModal','audioTuTurnoModal'];
+    var ids = ['audioModalBackend','audioModalCartas','audioModalVotacion','audioAbrirModal','audioCerrarModal'];
     ids.forEach(function(id) {
         var el = document.getElementById(id);
         if (el) {
@@ -735,11 +682,6 @@ socket.on('actualizarTurno', (data) => {
     document.getElementById("Jugador" + data.turno + "_V_Linea").style = "border-style: solid; border-color: red; border-width: 2px;";
     // 8. INICIAR TEMPORIZADOR
     iniciarTimerTurno();
-
-    // 9. MODAL TU TURNO — solo al jugador que le toca
-    if (miAsientoLocal === data.turno) {
-        mostrarModalTuTurno();
-    }
 });
 
 // ---------------------- OIDOS : Todos los valores del juego -------------------------------------------------------//

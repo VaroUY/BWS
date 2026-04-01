@@ -696,7 +696,6 @@
   <audio id="audioModalVotacion" preload="auto" style="display:none;"><source src="_audios/audioModalVotacion.mp3" type="audio/mpeg"></audio>
   <audio id="audioAbrirModal"    preload="auto" style="display:none;"><source src="_audios/audioAbrirModal.mp3"    type="audio/mpeg"></audio>
   <audio id="audioCerrarModal"   preload="auto" style="display:none;"><source src="_audios/audioCerrarModal.mp3"   type="audio/mpeg"></audio>
-  <audio id="audioTuTurnoModal"  preload="auto" style="display:none;"><source src="_audios/audioTuTurnoModal.mp3"  type="audio/mpeg"></audio>
 </div>
   <div id="ContenedorGeneral">
     <!-- ==================== LOGO TABLERO ==================== -->
@@ -995,35 +994,6 @@
     <div style="width:80px; height:1px; background:linear-gradient(90deg,transparent,#5b2d8e,transparent); margin:18px auto 0 auto;"></div>
   </div>
 </div>
-
-<!-- MODAL TU TURNO -->
-<div id="ModalTuTurno" style="display:none; position:absolute; top:0; left:0; width:1440px; height:820px; z-index:9000; pointer-events:none; align-items:center; justify-content:center;">
-  <div id="ModalTuTurnoInterior" style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; height:100%;">
-    <div id="ModalTuTurnoTexto" style="font-family:'Impact','Arial Black',sans-serif; font-size:246px; font-weight:300; color:#ffc107; letter-spacing:8px; text-align:center; line-height:1; white-space:nowrap; position:relative; z-index:2; text-shadow: 0 0 60px rgba(255,193,7,0.8), 0 0 120px rgba(255,193,7,0.4);">TU TURNO</div>
-  </div>
-</div>
-<style>
-  @keyframes tuTurnoEntrada {
-    0%   { opacity:0; transform:scale(0.6); }
-    60%  { opacity:1; transform:scale(1.06); }
-    80%  { opacity:1; transform:scale(0.97); }
-    100% { opacity:1; transform:scale(1); }
-  }
-  @keyframes tuTurnoSalida {
-    0%   { opacity:1; transform:scale(1); }
-    100% { opacity:0; transform:scale(1.15); }
-  }
-  #ModalTuTurnoInterior.entrando { animation: tuTurnoEntrada 0.6s cubic-bezier(0.22,1,0.36,1) both; }
-  #ModalTuTurnoInterior.saliendo { animation: tuTurnoSalida  0.4s ease-in both; }
-  /* Fondo radial que se desvanece hacia los bordes */
-  #ModalTuTurno::before {
-    content: '';
-    position: absolute;
-    top:0; left:0; width:100%; height:100%;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 75%);
-    pointer-events: none;
-  }
-</style>
 
 </div><!-- cierre ContenedorGeneral -->
   <script src="/socket.io/socket.io.js"></script>
