@@ -1614,9 +1614,8 @@ function jugarCartasCompletar(_esDelMaso, _queCarta) {
     // 4. Inyectamos el contenido y hacemos visible el modal
     divImagenes.innerHTML = htmlImagenes;
     divRadios.innerHTML = htmlRadios;
-    //--- Forzar recarga de imagen para evitar mostrar carta anterior por caché
+    //--- ** DEEPSEEK: Usar directamente la URL de la carta en lugar de copiar el src de CartaJugada
     const cartaActualImg = document.getElementById('ModalCartaImagen');
-    cartaActualImg.src = '';
     cartaActualImg.src = cartasMaestro[_valorIndiceAUX][2];
     // muestro la carta que salio en el modal antes de abrirlo
     

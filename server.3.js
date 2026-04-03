@@ -242,29 +242,13 @@ function iniciarFaseVotacion() {
     if (estadoJuego.votacion.timeoutId) clearTimeout(estadoJuego.votacion.timeoutId);
 
     // 2. Obtener los índices de los jugadores activos (con nombre != "Sin Asignar")
+    const jugadoresActivos = estadoJuego.jugadores.filter(j => j.nombre !== "Sin Asignar");
     const indicesActivos = [];
     estadoJuego.jugadores.forEach((j, idx) => {
         if (j.nombre !== "Sin Asignar") indicesActivos.push(idx);
     });
 
-    // 2b. REORDENAMIENTO ALEATORIO — se hace ANTES de repartir cartas
-    // Solo si el host NO marcó "Forzar el orden actual"
-    if (!estadoJuego.forzarOrden) {
-        console.log("Reordenando jugadores aleatoriamente antes de repartir cartas...");
-        const jugadoresActivos = indicesActivos.map(idx => estadoJuego.jugadores[idx]);
-        for (let i = jugadoresActivos.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [jugadoresActivos[i], jugadoresActivos[j]] = [jugadoresActivos[j], jugadoresActivos[i]];
-        }
-        for (let i = 0; i < indicesActivos.length; i++) {
-            estadoJuego.jugadores[indicesActivos[i]] = jugadoresActivos[i];
-        }
-        console.log("Nuevo orden:", indicesActivos.map(idx => estadoJuego.jugadores[idx].nombre));
-    } else {
-        console.log("Orden forzado por el host. No se reordena.");
-    }
-
-    // 3. Tomar las primeras 16 cartas del mazo (asignadas a cada jugador según su orden ya definitivo)
+    // 3. Tomar las primeras 16 cartas del mazo (asignadas a cada jugador según su orden)
     const cartasIniciales = estadoJuego.masoCartas.slice(0, 16);
     for (let i = 0; i < indicesActivos.length; i++) {
         const jugadorIdx = indicesActivos[i];
@@ -281,7 +265,7 @@ function iniciarFaseVotacion() {
             const cartas = estadoJuego.jugadores[jugadorIdx].cartasTemporales;
             io.to(socketId).emit('solicitarOpcionCartas', {
                 cartas: cartas,
-                tiempoLimite: 120
+                tiempoLimite: 120 // segundos
             });
         }
     }
@@ -289,12 +273,15 @@ function iniciarFaseVotacion() {
     // 5. Configurar timeout de 2 minutos para forzar opción "Me quedo" a los que no votaron
     estadoJuego.votacion.timeoutId = setTimeout(() => {
         console.log("Tiempo de votación agotado. Asignando 'Me quedo' a los que no votaron.");
+        // Forzar voto para los que aún no eligieron
         for (let i = 0; i < indicesActivos.length; i++) {
             const jugadorIdx = indicesActivos[i];
             if (estadoJuego.votacion.opciones[jugadorIdx] === null) {
+                // Asignar opción 1 = "Me quedo"
                 estadoJuego.votacion.opciones[jugadorIdx] = 1;
             }
         }
+        // Procesar los votos
         procesarVotos();
     }, 120000);
 }
@@ -316,6 +303,28 @@ function procesarVotos() {
 
     if (algunMeQuedo) {
         console.log("Algún jugador eligió 'Me quedo'. Iniciando partida con manos actuales.");
+
+        // ---- REORDENAMIENTO ALEATORIO DE JUGADORES ----
+        // Solo reordena si el host NO marcó "Forzar el orden actual"
+        if (!estadoJuego.forzarOrden) {
+            console.log("Reordenando jugadores aleatoriamente...");
+            // Extraemos solo los jugadores activos (no "Sin Asignar")
+            const jugadoresActivos = indicesActivos.map(idx => estadoJuego.jugadores[idx]);
+            // Fisher-Yates sobre el array de jugadores activos
+            for (let i = jugadoresActivos.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [jugadoresActivos[i], jugadoresActivos[j]] = [jugadoresActivos[j], jugadoresActivos[i]];
+            }
+            // Reubicamos los jugadores reordenados en los mismos índices que antes
+            for (let i = 0; i < indicesActivos.length; i++) {
+                estadoJuego.jugadores[indicesActivos[i]] = jugadoresActivos[i];
+            }
+            // Recalculamos indicesActivos por si cambió algo (por seguridad)
+            console.log("Nuevo orden de jugadores:", indicesActivos.map(idx => estadoJuego.jugadores[idx].nombre));
+        } else {
+            console.log("Orden forzado por el host. No se reordena.");
+        }
+        // -----------------------------------------------
 
         const estadoParaEnviar = obtenerEstadoParaCliente();
         estadoParaEnviar.manos = {};
@@ -801,43 +810,6 @@ socket.on('disconnect', () => {
     });
 
     delete usuariosConectados[socket.id];
-
-    // ---- PUNTO 3: Si no queda nadie conectado, reset completo del servidor ----
-    const quedanConectados = Object.keys(usuariosConectados).length;
-    if (quedanConectados === 0) {
-        console.log('Todos los jugadores se desconectaron. Reseteando servidor completo...');
-        estadoJuego = {
-            precios: { heineken: 1000, nike: 1000, gatorade: 1000, mcdonalds: 1000 },
-            entorno: { IndiceJuego: 0, TurnoJugador: 0, cartaJugada: false, cartaActual: null },
-            jugadores: [
-                { id: 1, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
-                { id: 2, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
-                { id: 3, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true },
-                { id: 4, nombre: "Sin Asignar", cash: 0, h: 1, n: 1, g: 1, m: 1, socketId: null, c1: true, c2: true, c3: true, c4: true }
-            ],
-            masoCartas: entreverarMazo([...cartasMaestroServer]),
-            votacion: { activa: false, opciones: [null, null, null, null], timeoutId: null },
-            ultimaDireccion: { heineken: 0, gatorade: 0, nike: 0, mcdonalds: 0 },
-            historial: [],
-            logEmpresas: { heineken: [1000], gatorade: [1000], nike: [1000], mcdonalds: [1000], labels: ["0"] },
-            logJugadores: { j1: [4000], j2: [4000], j3: [4000], j4: [4000] },
-            forzarOrden: false
-        };
-        partidaIniciada = false;
-        juegoEnCurso = false;
-        console.log('Servidor reseteado. Listo para nueva partida.');
-        return; // No hay nadie a quien notificar
-    }
-
-    // ---- PUNTO 2: Si la partida no llegó a estar en curso y quedó en limbo, liberar el rol host ----
-    if (!juegoEnCurso && partidaIniciada) {
-        // Verificar si todos los socketIds de jugadores activos son null
-        const hayAlguienAsignado = estadoJuego.jugadores.some(j => j.nombre !== "Sin Asignar" && j.socketId !== null);
-        if (!hayAlguienAsignado) {
-            console.log('Partida iniciada pero sin jugadores conectados. Reseteando partidaIniciada.');
-            partidaIniciada = false;
-        }
-    }
 
     // Si estaba en fase de votación y ya había votado, limpiamos su voto
     if (indiceDesconectado !== -1 && estadoJuego.votacion.activa) {
