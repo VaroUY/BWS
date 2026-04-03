@@ -875,35 +875,6 @@
           <input id="chkForzarOrden" type="checkbox" style="width: 18px; height: 18px; accent-color: #4a9eff; cursor: pointer; flex-shrink: 0;"/>
           <label for="chkForzarOrden" style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; cursor: pointer; margin: 0;">FORZAR EL ORDEN ACTUAL</label>
         </div>
-
-        <!-- SELECTOR DE MODO -->
-        <div style="margin-bottom: 18px;">
-          <p style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; margin-bottom: 12px;">MODO DE JUEGO</p>
-          <div style="display: flex; gap: 12px; justify-content: center;">
-            <!-- Modo Multijugador -->
-            <div id="ModoMultijugador" onclick="seleccionarModo('multi')" style="flex:1; padding: 12px 8px; background: #0a1f3a; border: 2px solid #4a9eff; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s;">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block; margin: 0 auto 6px auto;">
-                <circle cx="5" cy="7" r="2.5" stroke="#4a9eff" stroke-width="1.5"/>
-                <circle cx="19" cy="7" r="2.5" stroke="#4a9eff" stroke-width="1.5"/>
-                <circle cx="12" cy="5" r="2.5" stroke="#4a9eff" stroke-width="1.5"/>
-                <path d="M1 19c0-3 1.8-4.5 4-4.5s4 1.5 4 4.5" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M15 19c0-3 1.8-4.5 4-4.5s4 1.5 4 4.5" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M8 19c0-3 1.8-4.5 4-4.5s4 1.5 4 4.5" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              <p style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; margin: 0;">MULTIJUGADOR</p>
-            </div>
-            <!-- Modo Tablero -->
-            <div id="ModoTablero" onclick="seleccionarModo('tablero')" style="flex:1; padding: 12px 8px; background: #0d1929; border: 2px solid #1e3a5f; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s;">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block; margin: 0 auto 6px auto;">
-                <rect x="2" y="4" width="20" height="14" rx="2" stroke="#8ca0b8" stroke-width="1.5"/>
-                <path d="M8 18v2M16 18v2M5 21h14" stroke="#8ca0b8" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M6 9h12M6 12h8" stroke="#8ca0b8" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              <p style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; margin: 0;">TABLERO</p>
-            </div>
-          </div>
-        </div>
-
         <input onclick="asignacionInicialJugadores();" style="width: 100%; padding: 12px; background: #89152b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px;" type="button" value="ESTABLECER JUGADORES"/>
         <div style="width:140px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 16px auto 0 auto;"></div>
       </div>

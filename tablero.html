@@ -630,51 +630,6 @@
 </head>
 <body>
 
-  <!-- ==================== SPLASH SCREEN ==================== -->
-  <div id="SplashScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 999999; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer;">
-    <style>
-      @keyframes splashPulse {
-        0%   { opacity: 0.4; letter-spacing: 6px; }
-        50%  { opacity: 1;   letter-spacing: 8px; }
-        100% { opacity: 0.4; letter-spacing: 6px; }
-      }
-      @keyframes splashFadeIn {
-        0%   { opacity: 0; transform: translateY(18px); }
-        100% { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes splashFadeOut {
-        0%   { opacity: 1; }
-        100% { opacity: 0; pointer-events: none; }
-      }
-      #SplashScreen.saliendo {
-        animation: splashFadeOut 0.5s ease forwards;
-      }
-      #SplashLogo {
-        animation: splashFadeIn 0.8s cubic-bezier(0.22,1,0.36,1) both;
-      }
-      #SplashTexto {
-        animation: splashFadeIn 0.8s 0.3s cubic-bezier(0.22,1,0.36,1) both,
-                   splashPulse 2.2s 1.1s ease-in-out infinite;
-      }
-      #SplashLinea {
-        animation: splashFadeIn 0.8s 0.15s cubic-bezier(0.22,1,0.36,1) both;
-      }
-      #SplashSub {
-        animation: splashFadeIn 0.8s 0.5s cubic-bezier(0.22,1,0.36,1) both;
-      }
-      #SplashSub1 {
-        animation: splashFadeIn 0.8s 0.5s cubic-bezier(0.22,1,0.36,1) both;
-      }
-    </style>
-    <img id="SplashLogo" src="_imagenes/logo75.png" style="width: 740px; max-width: 90vw; height: auto; display: block; margin-bottom: 40px;"/>
-    <div id="SplashLinea" style="width: 400px; max-width: 80vw; height: 2px; background: linear-gradient(90deg, transparent, #4a9eff, transparent); margin-bottom: 28px;"></div>
-    <p id="SplashSub" style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 20px;">BOLSA DE WALL STREET</p>
-    <p id="SplashSub1" style="color: #8ca0b8; font-family: 'Arial' , sans-serif; font-size: 9px; font-weight: 300; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px;">by Varo . March 2026</p>
-
-    <p id="SplashTexto" style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 6px; text-transform: uppercase; margin: 0;">BIENVENIDO ... HAGA CLICK PARA CONTINUAR</p>
-    <div style="width: 200px; height: 1px; background: linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-top: 28px;"></div>
-  </div>
-
   <!-- PRELOADER -->
 <div id="preloader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 99999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
   <div class="bws-modal-up" style="background: #000000; border: 1px solid #5b2d8e; border-radius: 14px; padding: 32px 36px; width: 480px; text-align: center; box-shadow: 0 0 40px rgba(168,85,247,0.2);">
@@ -721,12 +676,12 @@
   <canvas id="canvasBarras" style="background-color: #060a0e; display:block; margin: 0 auto; width: 362px;"></canvas>
 </div>
     <!-- ==================== MONITOR CENTRAL ==================== -->
-    <div id="MonitorCentral">
+    <div id="MonitorCentral" style="overflow: hidden;">
       <div id="MonitorHeader"><img src="_imagenes/MonitorHeader.png" style="margin-left: 2px;"/></div>
       <div id="MonitorTituloAcciones" style="background: linear-gradient(90deg, #0d1929 0%, #162236 50%, #0d1929 100%); color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; padding: 5px 8px; border-top: 1px solid #1e3a5f; border-bottom: 1px solid #1e3a5f; text-align: center; margin-top: 5px;">
         MONITOR ACCIONARIO
       </div>
-      <div id="MonitorEmpresasAcciones">
+      <div id="MonitorEmpresasAcciones" style="overflow: hidden;">
         <table>
           <thead><tr><th class="th-nombre">JUGADOR</th><th class="th-total">TOTAL</th><th class="th-cash">CASH</th><th class="th-h">▲ HNK</th><th class="th-g">▲ GAT</th><th class="th-n">▲ NKE</th><th class="th-m">▲ MCD</th></tr></thead>
           <tr id="Jugador1_Linea"><td id="Jugador1_Nombre">—</td><td id="Jugador1_Total">.</td><td id="Jugador1_Cash">.</td><td id="Jugador1_Heineken">.</td><td id="Jugador1_Gatorade">.</td><td id="Jugador1_Nike">.</td><td id="Jugador1_McDonalds">.</td></tr>
@@ -841,74 +796,6 @@
       </div>
     </div>
 
-    <!-- MODAL BACKEND -->
-    <div id="ModalBackend" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
-      <div class="bws-modal-up" style="background: #000000; border: 1px solid #1e3a5f; border-radius: 14px; padding: 32px 36px; width: 440px; text-align: center; box-shadow: 0 0 40px rgba(74,158,255,0.12), inset 0 1px 0 rgba(74,158,255,0.08);">
-        <div style="width:260px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 20px auto;"></div>
-        <div style="margin-bottom: 20px;"><img alt="BWS Logo" src="_imagenes/logo75.png" style="width: 370px; height: auto; display: block; margin: 0 auto;"/></div>
-        <h2 style="color: #ffffff; margin-bottom: 4px; font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 3px;">BIENVENIDO A LA BWS</h2>
-        <p style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; margin-bottom: 24px;">CONFIGURAR PARTIDA</p>
-        <div style="width:100%; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-bottom:20px;"></div>
-        <div style="width: 100%;">
-          <div style="display: flex; align-items: center; margin-bottom: 10px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
-            <svg fill="none" height="20" style="margin-right:10px;" viewBox="0 0 24 24" width="20"><circle cx="12" cy="8" fill="#ffc107" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-width="2"/></svg>
-            <label style="font-weight: 700; color: #4a9eff; min-width: 80px;">JUGADOR 1</label>
-            <input id="altasJ1" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px;" type="text" value="..."/>
-          </div>
-          <div style="display: flex; align-items: center; margin-bottom: 10px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
-            <svg fill="none" height="20" style="margin-right:10px;" viewBox="0 0 24 24" width="20"><circle cx="12" cy="8" fill="#ffc107" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-width="2"/></svg>
-            <label style="font-weight: 700; color: #4a9eff; min-width: 80px;">JUGADOR 2</label>
-            <input id="altasJ2" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px;" type="text" value="..."/>
-          </div>
-          <div style="display: flex; align-items: center; margin-bottom: 10px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
-            <svg fill="none" height="20" style="margin-right:10px;" viewBox="0 0 24 24" width="20"><circle cx="12" cy="8" fill="#ffc107" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-width="2"/></svg>
-            <label style="font-weight: 700; color: #4a9eff; min-width: 80px;">JUGADOR 3</label>
-            <input id="altasJ3" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px;" type="text" value="..."/>
-          </div>
-          <div style="display: flex; align-items: center; margin-bottom: 20px; background: #0d1929; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e3a5f;">
-            <svg fill="none" height="20" style="margin-right:10px;" viewBox="0 0 24 24" width="20"><circle cx="12" cy="8" fill="#ffc107" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#ffc107" stroke-width="2"/></svg>
-            <label style="font-weight: 700; color: #4a9eff; min-width: 80px;">JUGADOR 4</label>
-            <input id="altasJ4" style="flex-grow: 1; margin-left: 10px; background: #080c10; border: 1px solid #1e3a5f; border-radius: 6px; color: #ffffff; padding: 6px 10px;" type="text" value="..."/>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px; padding: 10px 14px; background: #0d1929; border: 1px solid #1e3a5f; border-radius: 8px;">
-          <input id="chkForzarOrden" type="checkbox" style="width: 18px; height: 18px; accent-color: #4a9eff; cursor: pointer; flex-shrink: 0;"/>
-          <label for="chkForzarOrden" style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; cursor: pointer; margin: 0;">FORZAR EL ORDEN ACTUAL</label>
-        </div>
-
-        <!-- SELECTOR DE MODO -->
-        <div style="margin-bottom: 18px;">
-          <p style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 11px; letter-spacing: 3px; margin-bottom: 12px;">MODO DE JUEGO</p>
-          <div style="display: flex; gap: 12px; justify-content: center;">
-            <!-- Modo Multijugador -->
-            <div id="ModoMultijugador" onclick="seleccionarModo('multi')" style="flex:1; padding: 12px 8px; background: #0a1f3a; border: 2px solid #4a9eff; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s;">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block; margin: 0 auto 6px auto;">
-                <circle cx="5" cy="7" r="2.5" stroke="#4a9eff" stroke-width="1.5"/>
-                <circle cx="19" cy="7" r="2.5" stroke="#4a9eff" stroke-width="1.5"/>
-                <circle cx="12" cy="5" r="2.5" stroke="#4a9eff" stroke-width="1.5"/>
-                <path d="M1 19c0-3 1.8-4.5 4-4.5s4 1.5 4 4.5" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M15 19c0-3 1.8-4.5 4-4.5s4 1.5 4 4.5" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M8 19c0-3 1.8-4.5 4-4.5s4 1.5 4 4.5" stroke="#4a9eff" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              <p style="color: #4a9eff; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; margin: 0;">MULTIJUGADOR</p>
-            </div>
-            <!-- Modo Tablero -->
-            <div id="ModoTablero" onclick="seleccionarModo('tablero')" style="flex:1; padding: 12px 8px; background: #0d1929; border: 2px solid #1e3a5f; border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s;">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block; margin: 0 auto 6px auto;">
-                <rect x="2" y="4" width="20" height="14" rx="2" stroke="#8ca0b8" stroke-width="1.5"/>
-                <path d="M8 18v2M16 18v2M5 21h14" stroke="#8ca0b8" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M6 9h12M6 12h8" stroke="#8ca0b8" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              <p style="color: #8ca0b8; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; margin: 0;">TABLERO</p>
-            </div>
-          </div>
-        </div>
-
-        <input onclick="asignacionInicialJugadores();" style="width: 100%; padding: 12px; background: #89152b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px;" type="button" value="ESTABLECER JUGADORES"/>
-        <div style="width:140px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 16px auto 0 auto;"></div>
-      </div>
-    </div>
-
     <!-- MODAL ADVERTENCIA FINALIZAR -->
     <div id="ModalAdvertenciaFinalizar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000; background:rgba(0,0,0,0.75); justify-content:center; align-items:center;">
       <div id="ModalAdvertenciaFinalizarInterior" class="bws-modal-up" style="background:#000000; border:1px solid #89152b; border-radius:14px; padding:32px 36px; width:420px; text-align:center;">
@@ -923,37 +810,6 @@
           <button onclick="reproducirAudio('audioCerrarModal'); cerrarModalConAnimacion('ModalAdvertenciaFinalizar','ModalAdvertenciaFinalizarInterior','bws-modal-up-out',null)" style="background:transparent; color:#4a9eff; border:1px solid #1e3a5f; border-radius:8px; padding:10px 28px; cursor:pointer;">NO, VOLVER</button>
         </div>
         <div style="width:40px; height:1px; background:linear-gradient(90deg, transparent, #89152b, transparent); margin: 20px auto 0 auto;"></div>
-      </div>
-    </div>
-
-    <!-- MODAL ESPERA -->
-    <div id="ModalEspera" style="display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;">
-      <div class="bws-modal-down" style="background: #000000; border: 1px solid #1e3a5f; border-radius: 14px; padding: 32px 36px; width: 520px; text-align: center;">
-        <div style="width:260px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 20px auto;"></div>
-        <div style="margin-bottom: 20px;"><img alt="BWS Logo" src="_imagenes/logo75.png" style="width: 320px; height: auto; display: block; margin: 0 auto;"/></div>
-        <h2 style="color: #ffffff; margin-bottom: 4px; font-size: 20px; font-weight: 900; letter-spacing: 3px;">¡BIENVENIDOS A LA BWS!</h2>
-        <div style="width:100%; height:1px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 16px 0;"></div>
-        <p style="color: #8ca0b8; font-size: 13px; font-weight: 600; letter-spacing: 2px; margin-bottom: 24px;">OTRO JUGADOR ESTÁ ASIGNADO A CREAR LA PARTIDA.<br/>POR FAVOR ESPERE LA INICIALIZACIÓN DEL JUEGO.</p>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 12px;">
-          <div style="width: 24px; height: 24px; border: 2px solid #1e3a5f; border-top: 2px solid #4a9eff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-          <span style="color: #4a9eff; font-size: 11px; letter-spacing: 3px;">AGUARDANDO...</span>
-        </div>
-        <div style="width:200px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 20px auto 0 auto;"></div>
-      </div>
-      <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-    </div>
-
-    <!-- MODAL SELECCIÓN NOMBRE -->
-    <div id="ModalSeleccionNombre" style="display: none; position: absolute; z-index: 9999; left: 0; top: 0; width: 1440px; height: 820px; background: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
-      <div class="bws-modal-up" style="background: #000000; border: 1px solid #1e3a5f; border-radius: 14px; padding: 32px 36px; width: 440px; text-align: center; margin: auto;">
-        <div style="width:260px; height:2px; background:linear-gradient(90deg, transparent, #4a9eff, transparent); margin: 0 auto 20px auto;"></div>
-        <div style="margin-bottom: 20px;"><img alt="BWS Logo" src="_imagenes/logo75.png" style="width: 320px; height: auto; display: block; margin: 0 auto;"/></div>
-        <h2 style="color: #ffffff; margin-bottom: 4px; font-size: 20px; font-weight: 400; letter-spacing: 3px;">LA PARTIDA YA ESTÁ ACTIVA</h2>
-        <p style="color: #4a9eff; font-size: 11px; letter-spacing: 3px; margin-bottom: 24px;">SELECCIONÁ TU PLAZA</p>
-        <div style="width:100%; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin-bottom:20px;"></div>
-        <div id="ContenedorBotonesSeleccion" style="display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center;"></div>
-        <div id="MensajeEsperaSeleccion" style="display: none; margin-top: 24px; color: #4a9eff; font-size: 13px; font-weight: 700; letter-spacing: 2px; padding-top: 16px; border-top: 1px solid #1e3a5f;">⌛ ESPERANDO A LOS DEMÁS...</div>
-        <div style="width:140px; height:2px; background:linear-gradient(90deg, transparent, #1e3a5f, transparent); margin: 20px auto 0 auto;"></div>
       </div>
     </div>
 
@@ -1057,7 +913,7 @@
 </div><!-- cierre ContenedorGeneral -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
-  <script src="_js/bws.js"></script>
+  <script src="_js/bws-tablero.js"></script>
   <script type="text/javascript">
     function redimensionarJuego() {
       const contenedor = document.getElementById('ContenedorGeneral');

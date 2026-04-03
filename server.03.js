@@ -101,55 +101,12 @@ console.log('* INICIO SERVIDOR NODE : BWS by Varo             *');
 console.log('* Inicializando maso de cartas y entreverando ...*');
 console.log('**************************************************');
 console.log("* > Mazo 68 cartas creado y entreverado: Done    *");
-console.log(`* > Timestamp : ${new Date().toISOString()}`);
-console.log(`* > PID       : ${process.pid}`);
-console.log(`* > Node.js   : ${process.version}`);
 console.log('**************************************************');
-
-// ============================================================
-// MANEJADORES GLOBALES — detectan crashes, señales y sleep
-// ============================================================
-
-// Error no capturado — evita que el proceso muera y deja miga
-process.on('uncaughtException', (err) => {
-    console.error(`🔴 [FATAL] ${new Date().toISOString()} | ERROR NO CAPTURADO: ${err.message}`);
-    console.error(`🔴 [FATAL] Stack: ${err.stack}`);
-    console.error(`🔴 [FATAL] Estado: juegoEnCurso=${juegoEnCurso} partidaIniciada=${partidaIniciada} conectados=${Object.keys(usuariosConectados).length} indice=${estadoJuego.entorno.IndiceJuego}`);
-});
-
-process.on('unhandledRejection', (reason) => {
-    console.error(`🟠 [ERROR] ${new Date().toISOString()} | PROMESA RECHAZADA: ${reason}`);
-});
-
-// SIGTERM = Render durmiendo el proceso, reinicio de infraestructura, o nuevo deploy
-process.on('SIGTERM', () => {
-    const jugadores = estadoJuego.jugadores.filter(j => j.socketId !== null).map(j => j.nombre).join(', ') || 'ninguno';
-    console.warn(`⚠️  [SIGTERM] ${new Date().toISOString()} | Render está terminando el proceso`);
-    console.warn(`⚠️  [SIGTERM] juegoEnCurso=${juegoEnCurso} | conectados=${Object.keys(usuariosConectados).length} | indice=${estadoJuego.entorno.IndiceJuego} | jugadores=[${jugadores}]`);
-    setTimeout(() => process.exit(0), 500);
-});
-
-// Monitor de salud cada 5 minutos
-setInterval(() => {
-    const mem = process.memoryUsage();
-    const jugadores = estadoJuego.jugadores.filter(j => j.socketId !== null).map(j => j.nombre).join(',') || 'ninguno';
-    console.log(`📊 [MONITOR] ${new Date().toISOString()} | RAM:${Math.round(mem.rss/1024/1024)}MB | conectados:${Object.keys(usuariosConectados).length} | enCurso:${juegoEnCurso} | indice:${estadoJuego.entorno.IndiceJuego} | jugadores:[${jugadores}]`);
-}, 300000);
 
 
 // ------------------- Servimos los archivos de la carpeta actual (html, css, js, imagenes) -----------------------//
 
 app.use(express.static(__dirname));
-
-// Ruta explícita para modo tablero
-app.get('/tablero', (req, res) => {
-    res.sendFile(__dirname + '/tablero.html');
-});
-
-// Ruta explícita para modo tablero
-app.get('/tablero', (req, res) => {
-    res.sendFile(__dirname + '/tablero.html');
-});
 
 //------------------------------------------------------------------------------------------------------------------//
 //---------------------------------- 1. BASE DE DATOS DEL JUEGO (Memoria del Servidor) -----------------------------//
@@ -370,7 +327,6 @@ function procesarVotos() {
             delete estadoJuego.jugadores[indicesActivos[i]].cartasTemporales;
         }
         juegoEnCurso = true;
-        console.log(`🎮 [PARTIDA] ${new Date().toISOString()} | Partida iniciada. Jugadores: ${indicesActivos.map(idx => estadoJuego.jugadores[idx].nombre).join(', ')}`);
         io.emit('partidaListaParaEmpezar', estadoParaEnviar);
     } else {
         console.log("Nadie eligió 'Me quedo'. Reordenando mazo y repartiendo nuevas manos.");
@@ -401,7 +357,7 @@ io.on('connection', (socket) => {
 
     // Registramos al usuario en la lista técnica
     
-    console.log(`\n🟢 [CONEXION] ${new Date().toISOString()} | socket:${socket.id} | ip:${socket.handshake.address} | total:${Object.keys(usuariosConectados).length+1} | enCurso:${juegoEnCurso} | iniciada:${partidaIniciada}`);
+    console.log('==> Nuevo usuario conectado. ID Socket: ' + socket.id);
 
     usuariosConectados[socket.id] = {
         socketId: socket.id,
@@ -768,13 +724,13 @@ socket.on('registrarTransaccion', (transaccion) => {
 
 // --- GAME OVER (broadcast a todos)
 socket.on('gameOver', (data) => {
-    console.log(`🏁 [GAME_OVER] ${new Date().toISOString()} | tipo:${data.type} | datos:${JSON.stringify(data)}`);
+    console.log('Game over event recibido:', data);
     io.emit('gameOver', data);
 });
 
 // --- REINICIO DEL JUEGO (NEXT GAME)
 socket.on('resetGame', () => {
-    console.log(`🔄 [RESET_GAME] ${new Date().toISOString()} | Reinicio solicitado por cliente socket:${socket.id}`);
+    console.log('Reiniciando juego por solicitud de cliente...');
     
     // Resetear todo el estado del juego a valores iniciales
     estadoJuego = {
@@ -831,13 +787,8 @@ socket.on('resetGame', () => {
 });
 //-------------------------  D. DESCONEXIÓN
 
-socket.on('disconnect', (reason) => {
-    const jugadorNombre = estadoJuego.jugadores.find(j => j.socketId === socket.id)?.nombre || 'no-jugador';
-    console.log(`\n🔴 [DESCONEXION] ${new Date().toISOString()} | socket:${socket.id} | jugador:${jugadorNombre} | razon:${reason} | enCurso:${juegoEnCurso} | indice:${estadoJuego.entorno.IndiceJuego}`);
-    // Alerta especial para razones que indican problema de red o reinicio
-    if (reason === 'transport close' || reason === 'ping timeout' || reason === 'transport error') {
-        console.warn(`⚠️  [DESCONEXION] Razón sospechosa: "${reason}" — posible caída de red o reinicio del servidor`);
-    }
+socket.on('disconnect', () => {
+    console.log('<== Usuario desconectado: ' + socket.id);
 
     // Buscamos qué jugador era el que se desconectó
     let indiceDesconectado = -1;
@@ -854,7 +805,7 @@ socket.on('disconnect', (reason) => {
     // ---- PUNTO 3: Si no queda nadie conectado, reset completo del servidor ----
     const quedanConectados = Object.keys(usuariosConectados).length;
     if (quedanConectados === 0) {
-        console.log(`🔄 [RESET] ${new Date().toISOString()} | Sin jugadores — reset completo del servidor`);
+        console.log('Todos los jugadores se desconectaron. Reseteando servidor completo...');
         estadoJuego = {
             precios: { heineken: 1000, nike: 1000, gatorade: 1000, mcdonalds: 1000 },
             entorno: { IndiceJuego: 0, TurnoJugador: 0, cartaJugada: false, cartaActual: null },

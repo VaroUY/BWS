@@ -141,16 +141,6 @@ setInterval(() => {
 
 app.use(express.static(__dirname));
 
-// Ruta explícita para modo tablero
-app.get('/tablero', (req, res) => {
-    res.sendFile(__dirname + '/tablero.html');
-});
-
-// Ruta explícita para modo tablero
-app.get('/tablero', (req, res) => {
-    res.sendFile(__dirname + '/tablero.html');
-});
-
 //------------------------------------------------------------------------------------------------------------------//
 //---------------------------------- 1. BASE DE DATOS DEL JUEGO (Memoria del Servidor) -----------------------------//
 //------------------------------------------------------------------------------------------------------------------//

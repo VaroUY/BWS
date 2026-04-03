@@ -1694,6 +1694,13 @@ function asignacionInicialJugadores() {
     }
 
     // Si llegó aquí, es que hay nombres válidos:
+    if (_modoJuego === 'tablero') {
+        sessionStorage.setItem('bws_tablero_nombres', JSON.stringify(nombresParaPartida));
+        var forzar = document.getElementById('chkForzarOrden') ? document.getElementById('chkForzarOrden').checked : false;
+        sessionStorage.setItem('bws_tablero_forzarOrden', forzar);
+        window.location.href = 'tablero.html';
+        return;
+    }
     var forzarOrden = document.getElementById('chkForzarOrden') ? document.getElementById('chkForzarOrden').checked : false;
     console.log("Enviando nombres al servidor:", nombresParaPartida, "| Forzar orden:", forzarOrden);
     socket.emit('configurarNombresPartida', { nombres: nombresParaPartida, forzarOrden: forzarOrden });
@@ -3535,6 +3542,30 @@ function seleccionarCombo(valor, texto) {
     document.getElementById('ComboBoxOptions').style.display = 'none';
     limpiarValoresInput();
 }
+
+// ============================================================
+// SELECTOR DE MODO (Multijugador / Tablero)
+// ============================================================
+var _modoJuego = 'multi';
+
+function seleccionarModo(modo) {
+    _modoJuego = modo;
+    var elMulti   = document.getElementById('ModoMultijugador');
+    var elTablero = document.getElementById('ModoTablero');
+    if (!elMulti || !elTablero) return;
+    if (modo === 'multi') {
+        elMulti.style.background   = '#0a1f3a'; elMulti.style.borderColor  = '#4a9eff';
+        elMulti.querySelector('p').style.color = '#4a9eff';
+        elTablero.style.background  = '#0d1929'; elTablero.style.borderColor = '#1e3a5f';
+        elTablero.querySelector('p').style.color = '#8ca0b8';
+    } else {
+        elTablero.style.background  = '#0a1f3a'; elTablero.style.borderColor = '#4a9eff';
+        elTablero.querySelector('p').style.color = '#4a9eff';
+        elMulti.style.background   = '#0d1929'; elMulti.style.borderColor  = '#1e3a5f';
+        elMulti.querySelector('p').style.color = '#8ca0b8';
+    }
+}
+// ============================================================
 
 // ============================================================
 // FUNCIONES PARA MODAL GAME OVER
