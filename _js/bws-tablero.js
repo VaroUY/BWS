@@ -439,7 +439,7 @@ function detenerBlinkYBeep() {
 // ============================================================
 // CALCULAR TOTALES
 // ============================================================
-function calcularTotalJugadores() {
+function calcularTotalJugadores(totalesAntesParam) {
     for (var i=0; i<_jugadores.length; i++) {
         if (_jugadores[i][0]==='Sin Asignar') { var cv=document.getElementById('Jugador'+(i+1)+'_V_Cash'); if(cv) cv.innerHTML='.'; continue; }
         var total=Number(format2Num(document.getElementById('Jugador'+(i+1)+'_Cash').innerHTML));
@@ -452,8 +452,13 @@ function calcularTotalJugadores() {
         document.getElementById('Jugador'+(i+1)+'_V_McDonalds').innerHTML=num2Format(Number(format2Num(document.getElementById('Jugador'+(i+1)+'_McDonalds').innerHTML))*_valorMcDonalds);
         document.getElementById('Jugador'+(i+1)+'_V_Nike').innerHTML=num2Format(Number(format2Num(document.getElementById('Jugador'+(i+1)+'_Nike').innerHTML))*_valorNike);
         document.getElementById('Jugador'+(i+1)+'_V_Gatorade').innerHTML=num2Format(Number(format2Num(document.getElementById('Jugador'+(i+1)+'_Gatorade').innerHTML))*_valorGatorade);
+        // Usar totalesAntes pasados por parámetro si existen, sino buscar en logs
         var totalAnt=0;
-        switch(i){ case 0:totalAnt=_logJugador_1[_valorIndiceGraficas-1]||0;break; case 1:totalAnt=_logJugador_2[_valorIndiceGraficas-1]||0;break; case 2:totalAnt=_logJugador_3[_valorIndiceGraficas-1]||0;break; case 3:totalAnt=_logJugador_4[_valorIndiceGraficas-1]||0;break; }
+        if (totalesAntesParam && totalesAntesParam[i] !== null && totalesAntesParam[i] !== undefined) {
+            totalAnt = totalesAntesParam[i];
+        } else {
+            switch(i){ case 0:totalAnt=_logJugador_1[_valorIndiceGraficas-1]||0;break; case 1:totalAnt=_logJugador_2[_valorIndiceGraficas-1]||0;break; case 2:totalAnt=_logJugador_3[_valorIndiceGraficas-1]||0;break; case 3:totalAnt=_logJugador_4[_valorIndiceGraficas-1]||0;break; }
+        }
         var diff=total-totalAnt;
         var cr=document.getElementById('Jugador'+(i+1)+'_V_Cash');
         if (cr) { cr.innerHTML=diff>0?'▲ '+num2Format(diff):diff<0?'▼ '+num2Format(Math.abs(diff)):'0'; cr.style.color='#a855f7'; }
@@ -687,7 +692,7 @@ function terminarJugadaCartas(_empresaElegida,_valorIndiceINT) {
     if(_jugadores[2][0]!=='Sin Asignar') _logJugador_3[aux]=Number(format2Num(document.getElementById('Jugador3_Total').innerHTML)); else _logJugador_3[aux]=0;
     if(_jugadores[3][0]!=='Sin Asignar') _logJugador_4[aux]=Number(format2Num(document.getElementById('Jugador4_Total').innerHTML)); else _logJugador_4[aux]=0;
     _logLabels[aux]=aux.toString();
-    grafcaLineal(); calcularTotalJugadores();
+    grafcaLineal(); calcularTotalJugadores(totalesAntes);
     if (evaluarCondicionFinalizar()) iniciarBlinkYBeep(); else detenerBlinkYBeep();
 }
 
